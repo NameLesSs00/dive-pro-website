@@ -44,34 +44,20 @@ export default function BlogsPage() {
     <div className="bg-white">
 
       {/* ── SECTION 1: Hero ── */}
-      <section className="relative w-full bg-[#00173A]">
-        {/* Mobile Background (Cropped for height) */}
-        <div className="md:hidden relative w-full h-[380px]">
-          <Image
-            src="/categories/CategoriesDesktop.png"
-            alt="Blogs Hero"
-            fill
-            sizes="100vw"
-            priority
-            className="object-cover object-bottom"
-          />
-        </div>
-        
-        {/* Desktop Background (Natural Aspect Ratio) */}
-        <div className="hidden md:block w-full">
-          <Image
-            src="/categories/CategoriesDesktop.png"
-            alt="Blogs Hero"
-            width={1920}
-            height={800}
-            priority
-            className="w-full h-auto block"
-          />
-        </div>
-
+      <section className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[320px]">
+        <Image
+          src="/categories/CategoriesDesktop.png"
+          alt="Blogs Hero"
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover object-center"
+        />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/30" />
         {/* Overlay text */}
         <div className="absolute inset-0 flex flex-col justify-center">
-          <div className="container mx-auto px-4 z-10 w-full mt-[-20px] md:mt-[-40px]">
+          <div className="container mx-auto px-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
               Diving Guides &amp; Expert Tips
             </h1>

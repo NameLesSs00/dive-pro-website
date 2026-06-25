@@ -65,46 +65,30 @@ export default function CategoriesPage() {
     <div className="bg-white">
 
       {/* ── SECTION 1: Hero ── */}
-      <section className="relative w-full bg-[#00173A]">
-        {/* Mobile Background (Cropped for height) */}
-        <div className="md:hidden relative w-full h-[380px]">
-          <Image
-            src="/categories/CategoriesDesktop.png"
-            alt="Categories Hero"
-            fill
-            sizes="100vw"
-            priority
-            className="object-cover object-bottom"
-          />
-        </div>
-        
-        {/* Desktop Background (Natural Aspect Ratio) */}
-        <div className="hidden md:block w-full">
-          <Image
-            src="/categories/CategoriesDesktop.png"
-            alt="Categories Hero"
-            width={1920}
-            height={800}
-            priority
-            className="w-full h-auto block"
-          />
-        </div>
-
+      <section className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[320px]">
+        <Image
+          src="/categories/CategoriesDesktop.png"
+          alt="Categories Hero"
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover object-center"
+        />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/30" />
         {/* Text overlay */}
         <div className="absolute inset-0 flex flex-col justify-center">
-          <div className="container mx-auto px-4 z-10 mt-[-20px] md:mt-[-40px]">
+          <div className="container mx-auto px-4">
             {/* Breadcrumb */}
             <nav className="flex items-center text-sm font-medium text-white mb-3 md:mb-5 opacity-90">
               <Link href="/" className="hover:underline">Home</Link>
               <span className="mx-2">&gt;</span>
               <span>Categories</span>
             </nav>
-
             {/* Heading */}
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2 md:mb-4 leading-tight">
               Categories
             </h1>
-
             {/* Subtitle */}
             <p className="text-white text-sm sm:text-base md:text-lg leading-relaxed max-w-[280px] sm:max-w-sm md:max-w-md opacity-95">
               Discover a wide range of professional diving gear designed for safety, comfort, and performance.

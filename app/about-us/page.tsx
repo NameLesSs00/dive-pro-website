@@ -6,40 +6,23 @@ export default function AboutUsPage() {
     <div className="bg-white">
 
       {/* ── SECTION 1: Hero ── */}
-      <section className="relative w-full bg-[#00173A]">
-        {/* Mobile Background (Cropped for height) */}
-        <div className="md:hidden relative w-full h-[380px]">
-          <Image
-            src="/aboutUs/AboutUsHero.png"
-            alt="About Us Hero"
-            fill
-            sizes="100vw"
-            priority
-            className="object-cover object-[center_70%]"
-          />
-        </div>
-        
-        {/* Desktop Background (Natural Aspect Ratio) */}
-        <div className="hidden md:block w-full">
-          <Image
-            src="/aboutUs/AboutUsHero.png"
-            alt="About Us Hero"
-            width={1920}
-            height={800}
-            priority
-            className="w-full h-auto block"
-          />
-        </div>
-
+      <section className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[320px]">
+        <Image
+          src="/aboutUs/AboutUsHero.png"
+          alt="About Us Hero"
+          fill
+          sizes="100vw"
+          priority
+          className="object-cover object-center"
+        />
+        {/* Dark overlay for text readability */}
+        <div className="absolute inset-0 bg-black/30" />
         {/* Text overlay */}
         <div className="absolute inset-0 flex flex-col justify-center">
-          <div className="container mx-auto px-4 z-10 mt-[-20px] md:mt-[-40px]">
-            {/* Heading */}
+          <div className="container mx-auto px-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2 md:mb-4 leading-tight tracking-wide">
               About Us
             </h1>
-
-            {/* Subtitle */}
             <p className="text-white text-base md:text-xl leading-relaxed max-w-[300px] sm:max-w-md md:max-w-lg opacity-95">
               Passion For Diving Since 1995
             </p>
