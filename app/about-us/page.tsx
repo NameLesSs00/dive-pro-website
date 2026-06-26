@@ -77,10 +77,10 @@ export default function AboutUsPage() {
 
       {/* ── SECTION 3: Mission & Vision ── */}
       <section className="container mx-auto px-4 pb-16 md:pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-10">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
           
           {/* Mission */}
-          <div className="rounded-3xl p-8 md:p-10" style={{ backgroundColor: '#B5CCFE4D' }}>
+          <div className="flex-1 rounded-3xl p-8 md:p-10" style={{ backgroundColor: '#B5CCFE4D' }}>
             <h3 className="text-2xl md:text-3xl font-bold mb-5" style={{ color: '#0037AD' }}>
               <span className="border-b-[3px] pb-1" style={{ borderColor: '#D9D9D9' }}>
                 Our
@@ -93,7 +93,7 @@ export default function AboutUsPage() {
           </div>
 
           {/* Vision */}
-          <div className="rounded-3xl p-8 md:p-10" style={{ backgroundColor: '#B5CCFE4D' }}>
+          <div className="flex-1 rounded-3xl p-8 md:p-10" style={{ backgroundColor: '#B5CCFE4D' }}>
             <h3 className="text-2xl md:text-3xl font-bold mb-5" style={{ color: '#0037AD' }}>
               <span className="border-b-[3px] pb-1" style={{ borderColor: '#D9D9D9' }}>
                 Our
@@ -121,7 +121,7 @@ export default function AboutUsPage() {
         </div>
 
         {/* Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           
           {/* Card 1 */}
           <div className="bg-white rounded-2xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.06)] border border-gray-50 flex flex-col group">
