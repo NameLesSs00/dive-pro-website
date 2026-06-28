@@ -17,6 +17,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Dive Pro - Premium Diving Equipment",
   description: "Passionate about diving since 1995, providing trusted diving equipment and expert knowledge for divers of all experience levels.",
+  authors: [{ name: "Tech Gear solutions", url: "https://tech-gear.net/" }],
+  publisher: "Tech Gear solutions",
+  other: {
+    designer: "Tech Gear solutions",
+  },
 };
 
 export default function RootLayout({
