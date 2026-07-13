@@ -3,7 +3,17 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FiSearch, FiMenu, FiX } from 'react-icons/fi';
+import { FiSearch, FiMenu, FiX, FiHeart } from 'react-icons/fi';
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/products', label: 'Products' },
+  { href: '/categories', label: 'Categories' },
+  { href: '/about-us', label: 'About us' },
+  { href: '/contact-us', label: 'contact us' },
+  { href: '/blogs', label: 'Blogs' },
+  { href: '/store-locator', label: 'Store Locater' },
+];
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -14,9 +24,9 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b border-gray-200 relative z-50">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-5">
         {/* Logo Area */}
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="flex items-center flex-shrink-0">
           <Image
             src="/logos/logoHeaderBlue.png"
             alt="Dive Pro"
@@ -28,33 +38,41 @@ export default function Header() {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-gray-700">
-          <Link href="/" className="text-[#04328E] hover:text-[#032261] font-semibold">Home</Link>
-          <Link href="/products" className="hover:text-[#04328E]">Products</Link>
-          <Link href="/categories" className="hover:text-[#04328E]">Categories</Link>
-          <Link href="/about-us" className="hover:text-[#04328E]">About us</Link>
-          <Link href="/contact-us" className="hover:text-[#04328E]">contact us</Link>
-          <Link href="/blogs" className="hover:text-[#04328E]">Blogs</Link>
-          <Link href="/store-locator" className="hover:text-[#04328E]">Store Locater</Link>
+        <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-gray-700">
+          {navLinks.map((link) => (
+            <Link key={link.href} href={link.href} className="hover:text-[#04328E] whitespace-nowrap">
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
-        {/* Search Bar & Mobile Menu Toggle */}
-        <div className="flex items-center gap-4">
+        {/* Search Bar, Wishlist & Mobile Menu Toggle */}
+        <div className="flex items-center gap-3">
           {/* Desktop Search Bar */}
           <div className="hidden md:block relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiSearch className="text-gray-400" />
+              <FiSearch className="text-[#00113A]" />
             </div>
             <input
               type="text"
               placeholder="Search Product..."
-              className="pl-10 pr-4 py-2 w-64 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#04328E] placeholder-[#9EA3A9] text-black"
+              className="pl-10 pr-4 py-2 w-52 xl:w-64 bg-gray-50 border border-transparent rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#04328E] placeholder-[#9EA3A9] text-black"
             />
+          </div>
+
+          <div className="hidden md:flex items-center gap-2">
+            <Link
+              href="/wishlist"
+              className="w-10 h-10 rounded-full bg-gray-50 text-[#0037AD] flex items-center justify-center hover:bg-[#EEF3FF] transition-colors"
+              aria-label="Wishlist"
+            >
+              <FiHeart className="w-5 h-5" />
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle Button */}
           <button
-            className="md:hidden p-2 text-gray-600 focus:outline-none"
+            className="lg:hidden p-2 text-gray-600 focus:outline-none"
             onClick={toggleMenu}
             aria-label="Toggle navigation menu"
           >
@@ -65,7 +83,7 @@ export default function Header() {
 
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-lg py-4 px-4 flex flex-col space-y-4">
+        <div className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-lg py-4 px-4 flex flex-col space-y-4">
           {/* Mobile Search Bar */}
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -77,14 +95,25 @@ export default function Header() {
               className="pl-10 pr-4 py-2 w-full bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-[#04328E] placeholder-[#9EA3A9] text-black"
             />
           </div>
-          
-          <Link href="/" className="text-[#04328E] hover:bg-gray-50 px-2 py-2 rounded font-semibold" onClick={toggleMenu}>Home</Link>
-          <Link href="/products" className="text-gray-700 hover:bg-gray-50 px-2 py-2 rounded" onClick={toggleMenu}>Products</Link>
-          <Link href="/categories" className="text-gray-700 hover:bg-gray-50 px-2 py-2 rounded" onClick={toggleMenu}>Categories</Link>
-          <Link href="/about-us" className="text-gray-700 hover:bg-gray-50 px-2 py-2 rounded" onClick={toggleMenu}>About us</Link>
-          <Link href="/contact-us" className="text-gray-700 hover:bg-gray-50 px-2 py-2 rounded" onClick={toggleMenu}>contact us</Link>
-          <Link href="/blogs" className="text-gray-700 hover:bg-gray-50 px-2 py-2 rounded" onClick={toggleMenu}>Blogs</Link>
-          <Link href="/store-locator" className="text-gray-700 hover:bg-gray-50 px-2 py-2 rounded" onClick={toggleMenu}>Store Locater</Link>
+
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="text-gray-700 hover:bg-gray-50 px-2 py-2 rounded"
+              onClick={toggleMenu}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <Link
+            href="/wishlist"
+            className="text-[#0037AD] hover:bg-[#EEF3FF] px-2 py-2 rounded font-semibold flex items-center gap-2"
+            onClick={toggleMenu}
+          >
+            <FiHeart className="w-5 h-5" />
+            Wishlist
+          </Link>
         </div>
       )}
     </header>
