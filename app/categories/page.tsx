@@ -65,7 +65,7 @@ export default function CategoriesPage() {
     <div className="bg-white">
 
       {/* ── SECTION 1: Hero ── */}
-      <section className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[320px]">
+      <section className="relative flex min-h-[300px] w-full items-center overflow-hidden md:min-h-[380px]">
         <Image
           src="/categories/CategoriesDesktop.png"
           alt="Categories Hero"
@@ -86,11 +86,11 @@ export default function CategoriesPage() {
               <span>Categories</span>
             </nav>
             {/* Heading */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2 md:mb-4 leading-tight">
+            <h1 className="mb-3 text-4xl font-extrabold leading-tight text-white md:mb-4 md:text-6xl">
               Categories
             </h1>
             {/* Subtitle */}
-            <p className="text-white text-sm sm:text-base md:text-lg leading-relaxed max-w-[280px] sm:max-w-sm md:max-w-md opacity-95">
+            <p className="max-w-2xl text-sm leading-7 text-white/90 md:text-lg">
               Discover a wide range of professional diving gear designed for safety, comfort, and performance.
             </p>
           </div>
@@ -110,9 +110,11 @@ export default function CategoriesPage() {
             >
               {/* Product image */}
               <div className="flex items-center justify-center h-64 lg:h-72 pt-6 pb-2 px-6">
-                <img
+                <Image
                   src={cat.image}
                   alt={cat.name}
+                  width={320}
+                  height={260}
                   className="h-full w-full object-contain"
                 />
               </div>

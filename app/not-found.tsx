@@ -16,7 +16,7 @@ export default function NotFound() {
               alt="Dive Pro"
               width={150}
               height={60}
-              className="h-auto w-[150px] object-contain"
+              className="object-contain"
             />
             <div>
               <p className="text-[96px] font-black leading-none tracking-normal md:text-[150px] lg:text-[190px]">

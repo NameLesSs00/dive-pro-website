@@ -44,7 +44,7 @@ export default function BlogsPage() {
     <div className="bg-white">
 
       {/* ── SECTION 1: Hero ── */}
-      <section className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[320px]">
+      <section className="relative flex min-h-[300px] w-full items-center overflow-hidden md:min-h-[380px]">
         <Image
           src="/categories/CategoriesDesktop.png"
           alt="Blogs Hero"
@@ -58,10 +58,10 @@ export default function BlogsPage() {
         {/* Overlay text */}
         <div className="absolute inset-0 flex flex-col justify-center">
           <div className="container mx-auto px-4">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
+            <h1 className="mb-4 text-4xl font-extrabold leading-tight text-white md:text-6xl">
               Diving Guides &amp; Expert Tips
             </h1>
-            <p className="text-white text-sm md:text-base leading-relaxed max-w-[300px] sm:max-w-md md:max-w-lg opacity-95">
+            <p className="max-w-2xl text-sm leading-7 text-white/90 md:text-lg">
               Explore expert advice, equipment guides, safety recommendations, and practical tips
               designed to help divers of all experience levels enjoy safer and more rewarding
               underwater adventures.

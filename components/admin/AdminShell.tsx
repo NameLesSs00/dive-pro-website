@@ -2,8 +2,21 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode, useEffect } from 'react';
-import { FiGrid, FiLogOut, FiShield, FiUsers } from 'react-icons/fi';
+import { ReactNode, useEffect, useSyncExternalStore } from 'react';
+import {
+  FiBookOpen,
+  FiFileText,
+  FiGrid,
+  FiHelpCircle,
+  FiLayers,
+  FiList,
+  FiLogOut,
+  FiPackage,
+  FiMaximize,
+  FiMapPin,
+  FiShield,
+  FiUsers,
+} from 'react-icons/fi';
 import AdminLoadingPanel from '@/components/admin/AdminLoadingPanel';
 import { clearAuthSession } from '@/features/auth/authSlice';
 import { clearStoredAuth } from '@/features/auth/authStorage';
@@ -13,9 +26,31 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks';
 const adminLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: FiGrid },
   { href: '/admin/admins', label: 'Admins', icon: FiUsers },
+  { href: '/admin/categories', label: 'Categories', icon: FiLayers },
+  { href: '/admin/subcategories', label: 'Subcategories', icon: FiList },
+  { href: '/admin/sizes', label: 'Sizes', icon: FiMaximize },
+  { href: '/admin/materials', label: 'Materials', icon: FiPackage },
+  { href: '/admin/locators', label: 'Locators', icon: FiMapPin },
+  { href: '/admin/blog-categories', label: 'Blog Categories', icon: FiBookOpen },
+  { href: '/admin/blogs', label: 'Blogs', icon: FiFileText },
+  { href: '/admin/faqs', label: 'FAQs', icon: FiHelpCircle },
 ];
 
+function subscribeToClientHydration(callback: () => void) {
+  callback();
+  return () => {};
+}
+
+function useHydratedClient() {
+  return useSyncExternalStore(
+    subscribeToClientHydration,
+    () => true,
+    () => false
+  );
+}
+
 export default function AdminShell({ children }: { children: ReactNode }) {
+  const isClient = useHydratedClient();
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useAppDispatch();
@@ -25,12 +60,12 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const roles = useAppSelector(selectAdminRoles);
 
   useEffect(() => {
-    if (hydrated && !session) {
+    if (isClient && hydrated && !session) {
       router.replace('/admin/login');
     }
-  }, [hydrated, router, session]);
+  }, [hydrated, isClient, router, session]);
 
-  if (!hydrated || !session) {
+  if (!isClient || !hydrated || !session) {
     return <AdminLoadingPanel />;
   }
 
@@ -41,19 +76,19 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <section className="bg-[#F5F8FF] px-4 py-8 md:py-12">
-      <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="rounded-3xl border border-[#DCE8FF] bg-white p-5 shadow-[0_16px_50px_rgba(0,17,58,0.08)]">
-          <div className="mb-8 rounded-2xl bg-[#0037AD] p-5 text-white">
-            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-              <FiShield className="h-6 w-6" />
+    <section className="min-h-screen bg-[#F5F7FB] text-[#00113A]">
+      <aside className="border-b border-[#D9E4F5] bg-white lg:fixed lg:left-0 lg:top-0 lg:h-screen lg:w-64 lg:border-b-0 lg:border-r">
+        <div className="flex h-full flex-col">
+          <div className="border-b border-[#E5ECF8] p-5">
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-[#0037AD] text-white">
+              <FiShield className="h-5 w-5" />
             </div>
-            <p className="text-sm text-blue-100">Signed in as</p>
-            <p className="mt-1 break-all text-base font-bold">{email}</p>
-            <p className="mt-3 text-sm text-blue-100">{roles.join(', ') || 'Admin'}</p>
+            <p className="text-xs font-bold uppercase text-[#5E6675]">Dive Pro Admin</p>
+            <p className="mt-2 break-all text-sm font-bold text-[#00113A]">{email}</p>
+            <p className="mt-2 text-xs font-semibold text-[#0037AD]">{roles.join(', ') || 'Admin'}</p>
           </div>
 
-          <nav className="space-y-2">
+          <nav className="grid gap-1 p-3">
             {adminLinks.map((link) => {
               const Icon = link.icon;
               const isActive = pathname === link.href;
@@ -62,8 +97,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold transition-colors ${
-                    isActive ? 'bg-[#EEF3FF] text-[#0037AD]' : 'text-[#384152] hover:bg-[#F7FAFF]'
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-bold transition-colors ${
+                    isActive ? 'bg-[#EAF1FF] text-[#0037AD]' : 'text-[#384152] hover:bg-[#F6F8FC]'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -73,18 +108,20 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             })}
           </nav>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-2xl border border-[#DCE8FF] px-4 py-3 font-bold text-[#0037AD] transition-colors hover:bg-[#EEF3FF]"
-          >
-            <FiLogOut className="h-5 w-5" />
-            Logout
-          </button>
-        </aside>
+          <div className="mt-auto border-t border-[#E5ECF8] p-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-[#D9E4F5] px-4 py-3 text-sm font-bold text-[#0037AD] transition-colors hover:bg-[#EAF1FF]"
+            >
+              <FiLogOut className="h-5 w-5" />
+              Logout
+            </button>
+          </div>
+        </div>
+      </aside>
 
-        <div className="min-w-0">{children}</div>
-      </div>
+      <main className="min-w-0 p-4 md:p-6 lg:ml-64 lg:p-8">{children}</main>
     </section>
   );
 }

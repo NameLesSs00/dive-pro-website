@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FiSearch, FiFilter, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiFilter, FiX, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import ProductCard from "@/components/ProductCard";
 import ProductsFilter from "@/components/ProductsFilter";
 
@@ -23,13 +23,10 @@ export default function ProductsPage() {
     <div className="bg-white min-h-screen pb-24 relative overflow-hidden">
       
       {/* ── HERO SECTION ── */}
-      <section 
-        className="w-full relative overflow-hidden flex items-start justify-between pb-4 pt-4"
-        style={{ backgroundColor: 'rgba(181, 204, 254, 0.5)', height: '578px' }}
-      >
-        <div className="w-full max-w-[1440px] mx-auto px-4 md:px-8 xl:px-12 relative z-10 flex w-full h-full">
+      <section className="relative flex min-h-[300px] w-full items-center overflow-hidden bg-[#E6F0FF] md:min-h-[380px] lg:min-h-[420px]">
+        <div className="relative z-10 mx-auto flex h-full w-full max-w-[1440px] px-4 py-12 md:px-8 md:py-16 xl:px-12">
           {/* Hero Text */}
-          <div className="max-w-xl md:max-w-md lg:max-w-xl py-4">
+          <div className="max-w-xl md:max-w-md lg:max-w-xl">
             <div className="text-sm text-[#00113A] font-semibold mb-6 flex items-center gap-2">
               <Link href="/" className="hover:underline">Home</Link>
               <span>&gt;</span>
@@ -38,21 +35,21 @@ export default function ProductsPage() {
               <span className="text-[#0037AD]">Wetsuits</span>
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#00113A] mb-6">
+            <h1 className="mb-4 text-4xl font-extrabold leading-tight text-[#00113A] md:text-6xl">
               Wetsuits
             </h1>
-            <p className="text-[#00113A] text-base md:text-lg lg:text-xl leading-relaxed opacity-90">
+            <p className="text-sm leading-7 text-[#00113A]/85 md:text-lg">
               Professional wetsuits designed for warmth, flexibility, and comfort in every diving environment. From tropical reefs to icy depths, explore our premium range.
             </p>
           </div>
         </div>
 
         {/* Hero Images Overlay */}
-        <div className="absolute inset-0 w-full max-w-[1440px] mx-auto hidden md:block z-10 pointer-events-none">
+        <div className="absolute inset-0 z-10 mx-auto hidden w-full max-w-[1440px] pointer-events-none md:block">
           {/* Big Suit (Left/Back) */}
           <div 
             className="absolute opacity-95 transition-all duration-300 transform md:scale-75 lg:scale-90 xl:scale-100 origin-top-right" 
-            style={{ width: '662px', height: '637px', top: '72px', right: '119px' }}
+            style={{ width: '520px', height: '500px', top: '24px', right: '140px' }}
           >
             <Image
               src="/products/heroProductsFront.png"
@@ -65,7 +62,7 @@ export default function ProductsPage() {
           {/* Small Suit (Right/Front) */}
           <div 
             className="absolute z-10 drop-shadow-2xl transition-all duration-300 transform md:scale-75 lg:scale-90 xl:scale-100 origin-top-right" 
-            style={{ width: '385px', height: '481px', top: '144px', right: '78px' }}
+            style={{ width: '310px', height: '380px', top: '80px', right: '82px' }}
           >
             <Image
               src="/products/heroProductsBack.png"

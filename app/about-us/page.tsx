@@ -1,35 +1,17 @@
 import Image from 'next/image';
-import Link from 'next/link';
+import PublicPageHero from '@/components/PublicPageHero';
 
 export default function AboutUsPage() {
   return (
     <div className="bg-white">
 
       {/* ── SECTION 1: Hero ── */}
-      <section className="relative w-full h-[180px] sm:h-[220px] md:h-[280px] lg:h-[320px]">
-        <Image
-          src="/aboutUs/AboutUsHero.png"
-          alt="About Us Hero"
-          fill
-          sizes="100vw"
-          priority
-          className="object-cover object-center"
-        />
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black/30" />
-        {/* Text overlay */}
-        <div className="absolute inset-0 flex flex-col justify-center">
-          <div className="container mx-auto px-4">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-2 md:mb-4 leading-tight tracking-wide">
-              About Us
-            </h1>
-            <p className="text-white text-base md:text-xl leading-relaxed max-w-[300px] sm:max-w-md md:max-w-lg opacity-95">
-              Passion For Diving Since 1995
-            </p>
-          </div>
-        </div>
-      </section>
-
+      <PublicPageHero
+        title="About Us"
+        description="Passion for diving since 1995."
+        imageSrc="/aboutUs/AboutUsHero.png"
+        imageAlt="About Dive Pro"
+      />
       {/* ── SECTION 2: Our Story ── */}
       <section className="container mx-auto px-4 py-16 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">

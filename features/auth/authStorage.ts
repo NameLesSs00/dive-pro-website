@@ -11,6 +11,10 @@ export function loadStoredAuth(): AuthSession | null {
   try {
     const session = JSON.parse(rawSession) as AuthSession;
     if (!session.accessToken || !session.email || !session.expiresAt) return null;
+    if (Number.isNaN(Date.parse(session.expiresAt)) || new Date(session.expiresAt) <= new Date()) {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+      return null;
+    }
     return session;
   } catch {
     window.localStorage.removeItem(AUTH_STORAGE_KEY);

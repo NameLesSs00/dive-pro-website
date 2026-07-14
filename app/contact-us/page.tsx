@@ -24,7 +24,7 @@ export default function ContactUsPage() {
     <div className="bg-[#F8F9FB] min-h-screen pb-24">
       
       {/* ── HERO SECTION ── */}
-      <section className="relative w-full h-[400px] md:h-[500px]">
+      <section className="relative flex min-h-[300px] w-full items-center overflow-hidden md:min-h-[380px]">
         <Image
           src="/categories/ContactHero.png"
           alt="Contact Us Hero"
@@ -38,18 +38,18 @@ export default function ContactUsPage() {
         {/* Text content */}
         <div className="absolute inset-0 flex flex-col justify-center">
           <div className="container mx-auto px-4 md:px-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+            <h1 className="mb-4 text-4xl font-extrabold leading-tight text-white md:text-6xl">
               Get In Touch
             </h1>
-            <p className="text-white text-base md:text-lg max-w-lg leading-relaxed opacity-90">
-              We're here to help with any questions about our products and professional maritime services. Reach out to our experts today.
+            <p className="max-w-2xl text-sm leading-7 text-white/90 md:text-lg">
+              We&apos;re here to help with any questions about our products and professional maritime services. Reach out to our experts today.
             </p>
           </div>
         </div>
       </section>
 
       {/* ── CONTACT INFO BAR (Single unified card overlapping hero) ── */}
-      <section className="relative z-10 -mt-20 container mx-auto px-4 md:px-8">
+      <section className="relative z-10 -mt-10 container mx-auto px-4 md:-mt-14 md:px-8">
         <div className="bg-white rounded-[28px] shadow-[0_8px_40px_rgb(0,0,0,0.08)] p-6 md:p-8 lg:p-6 xl:p-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-0 lg:divide-x lg:divide-gray-200">
 
           {/* Location */}
@@ -109,7 +109,7 @@ export default function ContactUsPage() {
               Send Us a Message
             </h2>
             <p className="text-gray-500 text-sm md:text-base">
-              Have a question or need more information about our products? Fill out the form below and we'll get back to you as soon as possible.
+              Have a question or need more information about our products? Fill out the form below and we&apos;ll get back to you as soon as possible.
             </p>
           </div>
 

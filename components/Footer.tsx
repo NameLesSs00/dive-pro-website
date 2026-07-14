@@ -1,9 +1,18 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FiPhone, FiGlobe, FiMapPin } from 'react-icons/fi';
 import { FaFacebookF, FaInstagram, FaTiktok, FaXTwitter } from 'react-icons/fa6';
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer
       className="text-white pt-12 pb-6 overflow-hidden"
@@ -19,7 +28,7 @@ export default function Footer() {
               alt="Dive Pro"
               width={150}
               height={60}
-              className="w-[150px] h-auto object-contain"
+              className="object-contain"
             />
             <p className="text-sm text-blue-100 leading-relaxed mt-4">
               Passionate about diving since 1995, providing trusted diving equipment and expert knowledge for divers of all experience levels.
@@ -47,7 +56,7 @@ export default function Footer() {
               alt=""
               width={50}
               height={50}
-              className="w-[50px] h-auto object-contain opacity-60 absolute -top-8 hidden md:block"
+              className="object-contain opacity-60 absolute -top-8 hidden md:block"
             />
             <div className="h-[56px] hidden md:block" aria-hidden="true" />
             <h3 className="font-semibold text-lg mb-4">contact Us</h3>

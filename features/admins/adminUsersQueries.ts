@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createAdminUser, deleteAdminUser, getAdminUsers } from '@/lib/apis/adminUsersApi';
-import { CreateAdminUserRequest } from '@/lib/models/adminUser';
+import { AdminUser, CreateAdminUserRequest } from '@/lib/models/adminUser';
 
 export const adminUsersQueryKey = ['admin-users'];
 
@@ -27,8 +27,11 @@ export function useCreateAdminUser(token: string | null) {
       const response = await createAdminUser(payload, token);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminUsersQueryKey });
+    onSuccess: (createdAdmin) => {
+      queryClient.setQueryData<AdminUser[]>(adminUsersQueryKey, (currentAdmins = []) => {
+        const withoutDuplicate = currentAdmins.filter((admin) => admin.id !== createdAdmin.id);
+        return [...withoutDuplicate, createdAdmin];
+      });
     },
   });
 }
@@ -40,9 +43,12 @@ export function useDeleteAdminUser(token: string | null) {
     mutationFn: async (id: string) => {
       if (!token) throw new Error('You need to login again.');
       await deleteAdminUser(id, token);
+      return id;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminUsersQueryKey });
+    onSuccess: (deletedAdminId) => {
+      queryClient.setQueryData<AdminUser[]>(adminUsersQueryKey, (currentAdmins = []) =>
+        currentAdmins.filter((admin) => admin.id !== deletedAdminId)
+      );
     },
   });
 }

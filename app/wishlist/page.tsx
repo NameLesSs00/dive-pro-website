@@ -26,7 +26,7 @@ const wishlistItems = [
 export default function WishlistPage() {
   return (
     <div className="bg-white text-[#20232A]">
-      <section className="relative min-h-[360px] overflow-hidden bg-[#003D8E] md:min-h-[430px]">
+      <section className="relative min-h-[300px] overflow-hidden bg-[#003D8E] md:min-h-[380px]">
         <Image
           src="/Home/diver.jpg"
           alt="Diver underwater"
@@ -37,10 +37,10 @@ export default function WishlistPage() {
         />
         <div className="absolute inset-0 bg-[#003D8E]/35" />
 
-        <div className="container relative z-10 mx-auto flex min-h-[300px] items-center justify-between gap-8 px-4 py-14 md:min-h-[360px]">
+        <div className="container relative z-10 mx-auto flex min-h-[300px] items-center justify-between gap-8 px-4 py-12 md:min-h-[380px] md:py-16">
           <div className="max-w-xl text-white">
-            <h1 className="mb-6 text-4xl font-bold leading-tight md:text-6xl">My Wish-list</h1>
-            <p className="max-w-lg text-xl leading-relaxed md:text-2xl">
+            <h1 className="mb-4 text-4xl font-extrabold leading-tight md:text-6xl">My Wish-list</h1>
+            <p className="max-w-2xl text-sm leading-7 text-white/90 md:text-lg">
               Your saved gear for future adventures. Review your favourite and make them yours whenever you&apos;re ready.
             </p>
           </div>

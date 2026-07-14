@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { FiSearch, FiMenu, FiX, FiHeart } from 'react-icons/fi';
 
 const navLinks = [
@@ -15,8 +16,19 @@ const navLinks = [
   { href: '/store-locator', label: 'Store Locater' },
 ];
 
+function isActiveNavLink(pathname: string | null, href: string) {
+  if (!pathname) return false;
+  if (href === '/') return pathname === '/';
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   const toggleMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -32,18 +44,30 @@ export default function Header() {
             alt="Dive Pro"
             width={90}
             height={38}
-            style={{ width: '90px', height: 'auto' }}
             className="object-contain"
           />
         </Link>
 
         {/* Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-gray-700">
-          {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="hover:text-[#04328E] whitespace-nowrap">
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = isActiveNavLink(pathname, link.href);
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`relative whitespace-nowrap px-1 py-2 transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:rounded-full after:bg-[#0037AD] after:transition-all ${
+                  isActive
+                    ? 'font-bold text-[#0037AD] after:w-full'
+                    : 'text-gray-700 after:w-0 hover:text-[#04328E] hover:after:w-full'
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Search Bar, Wishlist & Mobile Menu Toggle */}
@@ -96,16 +120,23 @@ export default function Header() {
             />
           </div>
 
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-gray-700 hover:bg-gray-50 px-2 py-2 rounded"
-              onClick={toggleMenu}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = isActiveNavLink(pathname, link.href);
+
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`rounded px-3 py-2 font-semibold transition-colors ${
+                  isActive ? 'bg-[#EEF3FF] text-[#0037AD]' : 'text-gray-700 hover:bg-gray-50'
+                }`}
+                onClick={toggleMenu}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <Link
             href="/wishlist"
             className="text-[#0037AD] hover:bg-[#EEF3FF] px-2 py-2 rounded font-semibold flex items-center gap-2"
