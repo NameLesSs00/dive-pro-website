@@ -18,6 +18,58 @@ type ReviewListCache = {
   } | null;
 };
 
+function normalizeProductId(value: unknown) {
+  const productId = Number(value);
+  return Number.isFinite(productId) ? productId : null;
+}
+
+function isSameProductReview(review: Review, productId: number) {
+  return normalizeProductId(review.productId) === productId;
+}
+
+function buildOptimisticReview(payload: CreateReviewRequest): Review {
+  return {
+    id: -Date.now(),
+    productId: payload.productId,
+    name: payload.name,
+    email: payload.email,
+    comment: payload.comment,
+    rate: payload.rate,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function upsertProductReview(current: ReviewListCache | undefined, review: Review, previousId?: number) {
+  if (!current) {
+    return {
+      reviews: [review],
+      pagination: {
+        pageNumber: 1,
+        pageSize: 100,
+        totalCount: 1,
+      },
+    };
+  }
+
+  const withoutDuplicate = current.reviews.filter(
+    (currentReview) => currentReview.id !== review.id && currentReview.id !== previousId,
+  );
+
+  return {
+    ...current,
+    reviews: [review, ...withoutDuplicate],
+    pagination: current.pagination
+      ? {
+          ...current.pagination,
+          totalCount: Math.max(
+            Number(current.pagination.totalCount ?? withoutDuplicate.length),
+            withoutDuplicate.length + 1,
+          ),
+        }
+      : current.pagination,
+  };
+}
+
 export function useReviews(token: string | null, params: ReviewListParams) {
   return useQuery({
     queryKey: [...reviewsQueryKey, params],
@@ -30,6 +82,23 @@ export function useReviews(token: string | null, params: ReviewListParams) {
       };
     },
     enabled: Boolean(token),
+  });
+}
+
+export function usePublicProductReviews(productId: number | null, params: ReviewListParams = { pageNumber: 1, pageSize: 100 }) {
+  return useQuery({
+    queryKey: [...reviewsQueryKey, 'public', 'product', productId, params],
+    queryFn: async (): Promise<ReviewListCache> => {
+      if (!productId) throw new Error('Product not found.');
+      const response = await getReviews(null, params);
+      const reviews = response.data.filter((review) => isSameProductReview(review, productId));
+
+      return {
+        reviews,
+        pagination: response.pagination,
+      };
+    },
+    enabled: Boolean(productId),
   });
 }
 
@@ -50,13 +119,45 @@ export function useCreateReview() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: CreateReviewRequest) => {
+    mutationFn: async (payload: CreateReviewRequest): Promise<Review> => {
       const response = await createReview(payload);
-      return response.data;
+      return response.data ?? buildOptimisticReview(payload);
     },
-    onSuccess: (createdReview) => {
+    onMutate: async (payload) => {
+      const optimisticReview = buildOptimisticReview(payload);
+      await queryClient.cancelQueries({
+        queryKey: [...reviewsQueryKey, 'public', 'product', payload.productId],
+      });
+
+      queryClient.setQueriesData<ReviewListCache>(
+        { queryKey: [...reviewsQueryKey, 'public', 'product', payload.productId] },
+        (current) => upsertProductReview(current, optimisticReview),
+      );
+
+      return { optimisticReview };
+    },
+    onSuccess: (createdReview, payload, context) => {
+      const productId = normalizeProductId(createdReview.productId) ?? payload.productId;
+      const review = {
+        ...createdReview,
+        productId,
+        name: createdReview.name ?? payload.name,
+        email: createdReview.email ?? payload.email,
+        comment: createdReview.comment ?? payload.comment,
+        rate: createdReview.rate ?? payload.rate,
+      };
+
       queryClient.invalidateQueries({
-        queryKey: [...productsQueryKey, 'public', 'average-review', createdReview.productId],
+        queryKey: [...productsQueryKey, 'public', 'average-review', productId],
+      });
+      queryClient.setQueriesData<ReviewListCache>(
+        { queryKey: [...reviewsQueryKey, 'public', 'product', productId] },
+        (current) => upsertProductReview(current, review, context?.optimisticReview.id),
+      );
+    },
+    onSettled: (_createdReview, _error, payload) => {
+      queryClient.invalidateQueries({
+        queryKey: [...reviewsQueryKey, 'public', 'product', payload.productId],
       });
     },
   });

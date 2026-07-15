@@ -13,7 +13,7 @@ import { useProductColors } from "@/features/productColors/productColorQueries";
 import { useProductAverageReview, usePublicProduct } from "@/features/products/productQueries";
 import { getApiAssetUrl } from "@/lib/config/api";
 import { ProductColor } from "@/lib/models/product";
-import { getProductImage } from "@/lib/utils/productDisplay";
+import { getProductIdFromParam, getProductImage } from "@/lib/utils/productDisplay";
 
 function mergeProductColors(primaryColors: ProductColor[] = [], secondaryColors: ProductColor[] = []) {
   const colorMap = new Map<string, ProductColor>();
@@ -39,12 +39,12 @@ function mergeProductColors(primaryColors: ProductColor[] = [], secondaryColors:
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const productId = Number(resolvedParams.id);
+  const productId = getProductIdFromParam(resolvedParams.id);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [selectedColorId, setSelectedColorId] = useState<number | null>(null);
-  const productQuery = usePublicProduct(Number.isFinite(productId) ? productId : null);
-  const reviewQuery = useProductAverageReview(Number.isFinite(productId) ? productId : null);
-  const colorsQuery = useProductColors(Number.isFinite(productId) ? productId : null, null);
+  const productQuery = usePublicProduct(productId);
+  const reviewQuery = useProductAverageReview(productId);
+  const colorsQuery = useProductColors(productId, null);
   const product = productQuery.data;
   const productColors = useMemo(() => {
     if (!product) return [];

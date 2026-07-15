@@ -11,7 +11,7 @@ import { usePublicCategories } from '@/features/categories/categoryQueries';
 import { usePublicProducts } from '@/features/products/productQueries';
 import { useWishlistIds } from '@/features/wishlist/wishlistStorage';
 import { getApiAssetUrl } from '@/lib/config/api';
-import { getProductImage, getProductSubtitle } from '@/lib/utils/productDisplay';
+import { getProductImage, getProductPath, getProductSubtitle } from '@/lib/utils/productDisplay';
 
 const features = [
   { icon: <FiShield />, title: 'Safety First', desc: 'Engineered to the highest safety standards for peace of mind underwater.' },
@@ -218,7 +218,7 @@ export default function HomeShowcaseSections() {
                     <p className="text-sm font-bold text-[#6B7280]">{getProductSubtitle(product)}</p>
                     <h3 className="mt-1 break-words text-2xl font-extrabold text-[#0037AD] [overflow-wrap:anywhere]">{product.name}</h3>
                   </div>
-                  <Link href={`/products/${product.id}`} className="inline-flex h-10 flex-shrink-0 items-center justify-center gap-2 rounded-full bg-[#0037AD] px-4 text-xs font-bold text-white transition-colors hover:bg-[#00267A]">
+                  <Link href={getProductPath(product)} className="inline-flex h-10 flex-shrink-0 items-center justify-center gap-2 rounded-full bg-[#0037AD] px-4 text-xs font-bold text-white transition-colors hover:bg-[#00267A]">
                     Details <FaArrowRight className="text-[10px]" />
                   </Link>
                 </div>

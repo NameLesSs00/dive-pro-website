@@ -211,10 +211,11 @@ function ProductsPageContent() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-white pb-24">
-      <section className="relative flex min-h-[300px] w-full items-center overflow-hidden bg-[#E6F0FF] md:min-h-[380px] lg:min-h-[420px]">
-        <div className="relative z-10 mx-auto flex h-full w-full max-w-[1440px] px-4 py-12 md:px-8 md:py-16 xl:px-12">
+      <section className="relative flex min-h-[390px] w-full items-center overflow-hidden bg-[#E6F0FF] md:min-h-[380px] lg:min-h-[420px]">
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_82%_42%,rgba(0,55,173,0.18),transparent_34%),linear-gradient(90deg,#E6F0FF_0%,#E6F0FF_48%,rgba(230,240,255,0.68)_68%,rgba(230,240,255,0.24)_100%)]" />
+        <div className="relative z-20 mx-auto flex h-full w-full max-w-[1440px] px-4 py-12 md:px-8 md:py-16 xl:px-12">
           <motion.div
-            className="max-w-xl md:max-w-md lg:max-w-xl"
+            className="max-w-[18rem] rounded-2xl bg-[#E6F0FF]/70 py-2 backdrop-blur-[1px] md:max-w-md md:bg-transparent md:backdrop-blur-0 lg:max-w-xl"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -236,17 +237,11 @@ function ProductsPageContent() {
           </motion.div>
         </div>
 
-        <div className="pointer-events-none absolute inset-0 z-10 mx-auto hidden w-full max-w-[1440px] md:block">
-          <div
-            className="absolute origin-top-right opacity-95 transition-all duration-300 md:scale-75 lg:scale-90 xl:scale-100"
-            style={{ width: "520px", height: "500px", top: "24px", right: "140px" }}
-          >
+        <div className="pointer-events-none absolute inset-0 z-10 mx-auto w-full max-w-[1440px]">
+          <div className="absolute right-[-84px] top-[118px] h-[255px] w-[265px] origin-top-right opacity-80 transition-all duration-300 md:right-[140px] md:top-[24px] md:h-[500px] md:w-[520px] md:scale-75 md:opacity-95 lg:scale-90 xl:scale-100">
             <Image src="/products/heroProductsFront.png" alt="Wetsuit Big" fill className="object-contain" priority />
           </div>
-          <div
-            className="absolute z-10 origin-top-right drop-shadow-2xl transition-all duration-300 md:scale-75 lg:scale-90 xl:scale-100"
-            style={{ width: "310px", height: "380px", top: "80px", right: "82px" }}
-          >
+          <div className="absolute right-[6px] top-[160px] z-10 h-[210px] w-[160px] origin-top-right opacity-95 drop-shadow-2xl transition-all duration-300 md:right-[82px] md:top-[80px] md:h-[380px] md:w-[310px] md:scale-75 md:opacity-100 lg:scale-90 xl:scale-100">
             <Image src="/products/heroProductsBack.png" alt="Wetsuit Small" fill className="object-contain" priority />
           </div>
         </div>

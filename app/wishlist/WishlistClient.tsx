@@ -9,7 +9,7 @@ import ApiErrorMessage from '@/components/api/ApiErrorMessage';
 import { useWishlistIds, buildWishlistShareUrl, parseWishlistIdsFromShare } from '@/features/wishlist/wishlistStorage';
 import { getProductById } from '@/lib/apis/productsApi';
 import { Product } from '@/lib/models/product';
-import { getProductImage, getProductSubtitle } from '@/lib/utils/productDisplay';
+import { getProductImage, getProductPath, getProductSubtitle } from '@/lib/utils/productDisplay';
 
 type WishlistProductsResult = {
   products: Product[];
@@ -157,7 +157,7 @@ export default function WishlistClient() {
                 className="grid gap-6 rounded-2xl border border-[#B8C1D0] bg-white p-5 shadow-[0_10px_30px_rgba(0,17,58,0.04)] md:grid-cols-[190px_1fr_auto] md:items-center md:p-6 lg:grid-cols-[220px_1fr_180px]"
               >
                 <Link
-                  href={`/products/${product.id}`}
+                  href={getProductPath(product)}
                   className="relative mx-auto h-40 w-full max-w-[210px] md:mx-0 md:h-48"
                 >
                   <Image
@@ -202,7 +202,7 @@ export default function WishlistClient() {
                   </div>
 
                   <Link
-                    href={`/products/${product.id}`}
+                    href={getProductPath(product)}
                     className="inline-flex h-12 min-w-40 items-center justify-center rounded-xl bg-[#0037AD] px-6 text-base font-bold text-white transition-colors hover:bg-[#00267A]"
                   >
                     View details

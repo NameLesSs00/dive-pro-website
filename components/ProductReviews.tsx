@@ -4,8 +4,9 @@ import { FormEvent, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { FiCheckCircle, FiStar } from "react-icons/fi";
 import ApiErrorMessage from "@/components/api/ApiErrorMessage";
-import { useCreateReview } from "@/features/reviews/reviewQueries";
+import { useCreateReview, usePublicProductReviews } from "@/features/reviews/reviewQueries";
 import { ProductReviewSummary } from "@/lib/models/product";
+import { Review } from "@/lib/models/review";
 
 type ProductReviewsProps = {
   productId: number;
@@ -61,22 +62,73 @@ function RatingStars({
   );
 }
 
+function formatReviewDate(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function ReviewCard({ review }: { review: Review }) {
+  return (
+    <motion.article
+      className="rounded-2xl border border-[#E5ECF8] bg-white p-5 shadow-[0_12px_30px_rgba(0,17,58,0.04)]"
+      initial={{ opacity: 0, y: 14 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.35 }}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h4 className="break-words text-lg font-extrabold text-[#00113A] [overflow-wrap:anywhere]">{review.name}</h4>
+          {review.createdAt && (
+            <p className="mt-1 text-xs font-bold uppercase tracking-[0.14em] text-[#5E6675]">
+              {formatReviewDate(review.createdAt)}
+            </p>
+          )}
+        </div>
+        <RatingStars value={review.rate} />
+      </div>
+      <p className="mt-4 break-words leading-7 text-[#384152] [overflow-wrap:anywhere]">{review.comment}</p>
+    </motion.article>
+  );
+}
+
 export default function ProductReviews({ productId, summary }: ProductReviewsProps) {
   const createReviewMutation = useCreateReview();
+  const reviewsQuery = usePublicProductReviews(productId, { pageNumber: 1, pageSize: 100 });
   const [rating, setRating] = useState(0);
   const [form, setForm] = useState(initialForm);
   const [validationError, setValidationError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const reviews = useMemo(() => reviewsQuery.data?.reviews ?? [], [reviewsQuery.data?.reviews]);
   const averageRate = Number(summary?.averageRate ?? 0);
-  const totalReviews = Number(summary?.totalReviews ?? 0);
+  const totalReviews = reviews.length || Number(summary?.totalReviews ?? 0);
 
   const ratingRows = useMemo(() => {
+    const counts = reviews.reduce<Record<number, number>>(
+      (current, review) => {
+        const normalizedRate = Math.max(1, Math.min(5, Math.round(review.rate || 0)));
+        current[normalizedRate] += 1;
+        return current;
+      },
+      { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    );
+
     const roundedAverage = Math.round(averageRate);
-    return [5, 4, 3, 2, 1].map((star) => ({
-      star,
-      width: totalReviews > 0 && star === roundedAverage ? 100 : 0,
-    }));
-  }, [averageRate, totalReviews]);
+    return [5, 4, 3, 2, 1].map((star) => {
+      const count = counts[star] ?? 0;
+      return {
+        star,
+        width: reviews.length ? (count / reviews.length) * 100 : totalReviews > 0 && star === roundedAverage ? 100 : 0,
+      };
+    });
+  }, [averageRate, reviews, totalReviews]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -111,7 +163,47 @@ export default function ProductReviews({ productId, summary }: ProductReviewsPro
   };
 
   return (
-    <section className="mt-16 w-full">
+    <section id="product-reviews" className="mt-16 w-full">
+      <div className="rounded-[28px] border border-[#D9E4F5] bg-white p-4 shadow-[0_18px_50px_rgba(0,17,58,0.05)] md:p-6 lg:p-8">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0037AD]">Reviews for this product</p>
+            <h3 className="mt-2 text-2xl font-extrabold text-[#00113A]">Customer Reviews</h3>
+          </div>
+          <p className="text-sm font-bold text-[#5E6675]">
+            {totalReviews} review{totalReviews === 1 ? "" : "s"}
+          </p>
+        </div>
+
+        {reviewsQuery.isLoading && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div className="h-32 animate-pulse rounded-2xl bg-[#F2F6FF]" />
+            <div className="h-32 animate-pulse rounded-2xl bg-[#F2F6FF]" />
+          </div>
+        )}
+
+        {reviewsQuery.isError && (
+          <ApiErrorMessage error={reviewsQuery.error} title="Could not load product reviews" />
+        )}
+
+        {!reviewsQuery.isLoading && !reviewsQuery.isError && reviews.length > 0 && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {reviews.map((review) => (
+              <ReviewCard key={review.id} review={review} />
+            ))}
+          </div>
+        )}
+
+        {!reviewsQuery.isLoading && !reviewsQuery.isError && reviews.length === 0 && (
+          <div className="rounded-2xl bg-[#F7FAFF] px-6 py-10 text-center">
+            <h4 className="text-xl font-extrabold text-[#00113A]">No reviews for this product yet</h4>
+            <p className="mt-2 text-sm font-semibold text-[#5E6675]">
+              Be the first to share your experience.
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="grid gap-8 rounded-[28px] border border-[#D9E4F5] bg-[#F7FAFF] p-4 md:p-6 lg:grid-cols-[0.85fr_1.15fr] lg:p-8">
         <motion.div
           className="rounded-[24px] bg-white p-6 shadow-[0_18px_50px_rgba(0,17,58,0.06)]"
@@ -228,6 +320,7 @@ export default function ProductReviews({ productId, summary }: ProductReviewsPro
           </button>
         </motion.form>
       </div>
+
     </section>
   );
 }

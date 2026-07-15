@@ -12,7 +12,7 @@ function buildReviewsQuery(params: ReviewListParams = {}) {
   return queryString ? `/reviews?${queryString}` : '/reviews';
 }
 
-export function getReviews(token: string, params?: ReviewListParams) {
+export function getReviews(token: string | null, params?: ReviewListParams) {
   return apiRequest<Review[]>(buildReviewsQuery(params), {
     token,
     action: 'reviews.list',
