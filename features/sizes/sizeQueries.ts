@@ -33,6 +33,19 @@ export function useSizes(token: string | null, params: SizeListParams) {
   });
 }
 
+export function usePublicSizes(params: SizeListParams) {
+  return useQuery({
+    queryKey: [...sizesQueryKey, 'public', params],
+    queryFn: async (): Promise<SizeListCache> => {
+      const response = await getSizes(null, params);
+      return {
+        sizes: response.data,
+        pagination: response.pagination,
+      };
+    },
+  });
+}
+
 export function useCreateSize(token: string | null) {
   const queryClient = useQueryClient();
 

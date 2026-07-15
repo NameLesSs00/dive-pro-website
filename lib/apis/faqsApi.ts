@@ -12,14 +12,14 @@ function buildFaqQuery(params: FaqListParams = {}) {
   return queryString ? `/faqs?${queryString}` : '/faqs';
 }
 
-export function getFaqs(token: string, params?: FaqListParams) {
+export function getFaqs(token: string | null, params?: FaqListParams) {
   return apiRequest<Faq[]>(buildFaqQuery(params), {
     token,
     action: 'faqs.list',
   });
 }
 
-export function getFaqById(id: number, token: string) {
+export function getFaqById(id: number, token: string | null) {
   return apiRequest<Faq>(`/faqs/${id}`, {
     token,
     action: 'faqs.details',

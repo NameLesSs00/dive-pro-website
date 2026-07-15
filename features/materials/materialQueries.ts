@@ -38,6 +38,19 @@ export function useMaterials(token: string | null, params: MaterialListParams) {
   });
 }
 
+export function usePublicMaterials(params: MaterialListParams) {
+  return useQuery({
+    queryKey: [...materialsQueryKey, 'public', params],
+    queryFn: async (): Promise<MaterialListCache> => {
+      const response = await getMaterials(null, params);
+      return {
+        materials: response.data,
+        pagination: response.pagination,
+      };
+    },
+  });
+}
+
 export function useCreateMaterial(token: string | null) {
   const queryClient = useQueryClient();
 

@@ -12,7 +12,7 @@ function buildSizeQuery(params: SizeListParams = {}) {
   return queryString ? `/sizes?${queryString}` : '/sizes';
 }
 
-export function getSizes(token: string, params?: SizeListParams) {
+export function getSizes(token: string | null, params?: SizeListParams) {
   return apiRequest<Size[]>(buildSizeQuery(params), {
     token,
     action: 'sizes.list',

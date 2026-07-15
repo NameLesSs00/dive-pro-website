@@ -1,107 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { ProductSection } from "@/lib/models/product";
 
-// Mock data schema as requested by user's "yes"
-const TABS_DATA = [
+type ProductTabsProps = {
+  sections?: ProductSection[];
+};
+
+const fallbackSections: ProductSection[] = [
   {
-    id: "tech-specs",
-    label: "Technical Specifications",
-    content: {
-      "Product Type": "Shorty Wetsuit",
-      "Water Conditions": "Warm Water",
-      "Thickness": "3mm",
-      "Closure Type": "YKK Back Zipper",
-      "Gender": "Men",
-      "Seam Construction": "Glued & Double-Stitched Flat Seams",
-      "Material": "Premium Neoprene",
-      "Thermal Features": "Titanium-Coated Collar, Sleeves & Legs",
-      "Sleeve Adjustment": "Velcro Adjustable Sleeves",
-      "Fit": "Preformed Anatomical Cut"
-    }
+    id: 0,
+    name: "Product Details",
+    items: [],
   },
-  {
-    id: "design-comfort",
-    label: "Design & Comfort",
-    content: {
-      "Design Style": "Modern Ergonomic",
-      "Flexibility": "High Stretch Panels",
-      "Neckline": "Comfort Glideskin",
-      "Movement": "Unrestricted Range",
-      "Inner Lining": "Soft Plush Lining"
-    }
-  },
-  {
-    id: "advanced-protection",
-    label: "Advanced Protection",
-    content: {
-      "UV Protection": "UPF 50+",
-      "Abrasion Resistance": "Reinforced Shoulders",
-      "Sting Protection": "Jellyfish Shield",
-      "Durability": "Heavy Duty Thread"
-    }
-  },
-  {
-    id: "zipper-system",
-    label: "Zipper System",
-    content: {
-      "Main Zipper": "Heavy Duty #10 YKK",
-      "Water Seal": "Inner Gusset Flap",
-      "Pull Cord": "Extended Length with Grip",
-      "Locking Mechanism": "Velcro Tab Closure"
-    }
-  },
-  {
-    id: "recommended-for",
-    label: "Recommended For",
-    content: {
-      "Primary Activity": "Scuba Diving & Snorkeling",
-      "Skill Level": "Beginner to Professional",
-      "Environment": "Tropical to Sub-tropical waters",
-      "Water Temp Range": "72°F - 85°F (22°C - 29°C)"
-    }
-  }
 ];
 
-export default function ProductTabs() {
-  const [activeTab, setActiveTab] = useState(TABS_DATA[0].id);
-
-  const activeContent = TABS_DATA.find(t => t.id === activeTab)?.content || {};
+export default function ProductTabs({ sections = [] }: ProductTabsProps) {
+  const tabs = useMemo(() => (sections.length ? sections : fallbackSections), [sections]);
+  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? 0);
+  const activeSection = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
 
   return (
-    <div className="w-full mt-16 mb-16">
-      {/* Tab Headers */}
-      <div className="flex overflow-x-auto hide-scrollbar border-b border-gray-200">
-        <div className="flex space-x-8 min-w-max px-4 md:px-0">
-          {TABS_DATA.map((tab) => (
+    <div className="mb-16 mt-16 w-full">
+      <div className="flex overflow-x-auto border-b border-gray-200">
+        <div className="flex min-w-max space-x-8 px-4 md:px-0">
+          {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-4 text-base md:text-lg font-medium transition-colors relative whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "text-[#0037AD]"
-                  : "text-gray-500 hover:text-gray-800"
+              className={`relative whitespace-nowrap pb-4 text-base font-medium transition-colors md:text-lg ${
+                activeSection?.id === tab.id ? "text-[#0037AD]" : "text-gray-500 hover:text-gray-800"
               }`}
             >
-              {tab.label}
-              {activeTab === tab.id && (
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#0037AD] rounded-t-full" />
+              {tab.name}
+              {activeSection?.id === tab.id && (
+                <span className="absolute bottom-0 left-0 h-0.5 w-full rounded-t-full bg-[#0037AD]" />
               )}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Tab Content Grid */}
       <div className="mt-8 px-4 md:px-0">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-          {Object.entries(activeContent).map(([key, value], idx) => (
-            <div key={idx} className="flex justify-between items-center border-b border-gray-100 pb-3">
-              <span className="text-gray-500 text-sm md:text-base">{key}</span>
-              <span className="text-[#00113A] font-semibold text-sm md:text-base text-right">{value as string}</span>
-            </div>
-          ))}
-        </div>
+        {activeSection?.items?.length ? (
+          <div className="grid grid-cols-1 gap-x-12 gap-y-6 md:grid-cols-2">
+            {activeSection.items.map((item, index) => (
+              <div key={`${item.key}-${index}`} className="flex items-center justify-between gap-4 border-b border-gray-100 pb-3">
+                <span className="break-words text-sm text-gray-500 [overflow-wrap:anywhere] md:text-base">{item.key}</span>
+                <span className="break-words text-right text-sm font-semibold text-[#00113A] [overflow-wrap:anywhere] md:text-base">
+                  {item.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-[#F7FAFF] px-6 py-10 text-center text-sm font-semibold text-[#5E6675]">
+            Product specifications will appear here once they are published.
+          </div>
+        )}
       </div>
     </div>
   );

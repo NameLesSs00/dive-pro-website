@@ -17,14 +17,14 @@ function buildSubCategoryQuery(params: SubCategoryListParams = {}) {
   return queryString ? `/subcategories?${queryString}` : '/subcategories';
 }
 
-export function getSubCategories(token: string, params?: SubCategoryListParams) {
+export function getSubCategories(token: string | null, params?: SubCategoryListParams) {
   return apiRequest<SubCategory[]>(buildSubCategoryQuery(params), {
     token,
     action: 'subCategories.list',
   });
 }
 
-export function getSubCategoryById(id: number, token: string) {
+export function getSubCategoryById(id: number, token: string | null) {
   return apiRequest<SubCategory>(`/subcategories/${id}`, {
     token,
     action: 'subCategories.details',

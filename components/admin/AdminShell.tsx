@@ -14,6 +14,7 @@ import {
   FiPackage,
   FiMaximize,
   FiMapPin,
+  FiMessageSquare,
   FiShield,
   FiUsers,
 } from 'react-icons/fi';
@@ -30,6 +31,8 @@ const adminLinks = [
   { href: '/admin/subcategories', label: 'Subcategories', icon: FiList },
   { href: '/admin/sizes', label: 'Sizes', icon: FiMaximize },
   { href: '/admin/materials', label: 'Materials', icon: FiPackage },
+  { href: '/admin/products', label: 'Products', icon: FiPackage },
+  { href: '/admin/reviews', label: 'Reviews', icon: FiMessageSquare },
   { href: '/admin/locators', label: 'Locators', icon: FiMapPin },
   { href: '/admin/blog-categories', label: 'Blog Categories', icon: FiBookOpen },
   { href: '/admin/blogs', label: 'Blogs', icon: FiFileText },

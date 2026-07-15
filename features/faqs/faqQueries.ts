@@ -32,6 +32,19 @@ export function useFaqs(token: string | null, params: FaqListParams) {
   });
 }
 
+export function usePublicFaqs(params: FaqListParams) {
+  return useQuery({
+    queryKey: [...faqsQueryKey, 'public', params],
+    queryFn: async (): Promise<FaqListCache> => {
+      const response = await getFaqs(null, params);
+      return {
+        faqs: response.data,
+        pagination: response.pagination,
+      };
+    },
+  });
+}
+
 export function useCreateFaq(token: string | null) {
   const queryClient = useQueryClient();
 

@@ -10,6 +10,7 @@ interface ProductGalleryProps {
 
 export default function ProductGallery({ images }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const safeActiveIndex = images[activeIndex] ? activeIndex : 0;
 
   const nextImage = () => {
     setActiveIndex((prev) => (prev + 1) % images.length);
@@ -22,15 +23,15 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
   if (!images || images.length === 0) return null;
 
   return (
-    <div className="flex flex-col-reverse md:flex-row gap-4 h-full">
+    <div className="flex flex-col-reverse gap-4 md:flex-row">
       {/* Thumbnails */}
-      <div className="flex md:flex-col gap-4 overflow-x-auto md:overflow-y-auto hide-scrollbar md:w-24 flex-shrink-0">
+      <div className="hide-scrollbar flex flex-shrink-0 gap-3 overflow-x-auto md:max-h-[min(620px,calc(100vh-150px))] md:w-24 md:flex-col md:overflow-y-auto">
         {images.map((img, idx) => (
           <button
             key={idx}
             onClick={() => setActiveIndex(idx)}
-            className={`relative w-20 h-24 md:w-24 md:h-32 rounded-xl overflow-hidden border-2 flex-shrink-0 transition-all ${
-              activeIndex === idx ? "border-[#0037AD] shadow-md" : "border-gray-200 hover:border-gray-300"
+            className={`relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 bg-white transition-all md:h-28 md:w-24 ${
+              safeActiveIndex === idx ? "border-[#0037AD] shadow-md" : "border-gray-200 hover:border-gray-300"
             }`}
           >
             <Image
@@ -44,11 +45,11 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
       </div>
 
       {/* Main Image */}
-      <div className="relative flex-1 bg-[#EEF3FF]/50 rounded-2xl flex items-center justify-center min-h-[400px] md:min-h-[500px]">
-        <div className="absolute inset-0 flex items-center justify-center p-8">
-          <div className="relative w-full h-full">
+      <div className="relative flex min-h-[320px] flex-1 items-center justify-center rounded-2xl bg-[#EEF3FF]/50 md:min-h-0 md:aspect-[4/5] md:max-h-[min(620px,calc(100vh-150px))]">
+        <div className="absolute inset-0 flex items-center justify-center p-6 md:p-8">
+          <div className="relative h-full w-full">
             <Image
-              src={images[activeIndex]}
+              src={images[safeActiveIndex]}
               alt="Main Product Image"
               fill
               className="object-contain"
@@ -60,15 +61,15 @@ export default function ProductGallery({ images }: ProductGalleryProps) {
         {/* Mobile Controls (optional) */}
         <button 
           onClick={prevImage}
-          className="md:hidden absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center text-[#0037AD] shadow-md z-10"
+          className="absolute left-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[#0037AD] shadow-md md:hidden"
         >
-          <FiChevronLeft className="w-6 h-6" />
+          <FiChevronLeft className="h-6 w-6" />
         </button>
         <button 
           onClick={nextImage}
-          className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 rounded-full flex items-center justify-center text-[#0037AD] shadow-md z-10"
+          className="absolute right-4 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-[#0037AD] shadow-md md:hidden"
         >
-          <FiChevronRight className="w-6 h-6" />
+          <FiChevronRight className="h-6 w-6" />
         </button>
       </div>
     </div>

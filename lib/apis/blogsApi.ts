@@ -31,14 +31,14 @@ function buildBlogFormData(payload: CreateBlogRequest | UpdateBlogRequest) {
   return formData;
 }
 
-export function getBlogs(token: string, params?: BlogListParams) {
+export function getBlogs(token: string | null, params?: BlogListParams) {
   return apiRequest<Blog[]>(buildBlogsQuery(params), {
     token,
     action: 'blogs.list',
   });
 }
 
-export function getBlogById(id: number, token: string) {
+export function getBlogById(id: number, token: string | null) {
   return apiRequest<Blog>(`/Blogs/${id}`, {
     token,
     action: 'blogs.details',

@@ -28,14 +28,14 @@ function buildBlogCategoryFormData(payload: CreateBlogCategoryRequest | UpdateBl
   return formData;
 }
 
-export function getBlogCategories(token: string, params?: BlogCategoryListParams) {
+export function getBlogCategories(token: string | null, params?: BlogCategoryListParams) {
   return apiRequest<BlogCategory[]>(buildBlogCategoryQuery(params), {
     token,
     action: 'blogCategories.list',
   });
 }
 
-export function getBlogCategoryById(id: number, token: string) {
+export function getBlogCategoryById(id: number, token: string | null) {
   return apiRequest<BlogCategory>(`/blog-categories/${id}`, {
     token,
     action: 'blogCategories.details',

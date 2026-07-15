@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import CustomerExperiences from '@/components/CustomerExperiences';
+import HomeFaqSection from '@/components/faq/HomeFaqSection';
 import HomeHero from '@/components/HomeHero';
 import HomeShowcaseSections from '@/components/HomeShowcaseSections';
 import { FaArrowRight } from 'react-icons/fa';
@@ -53,6 +54,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <HomeFaqSection />
 
     </div>
   );

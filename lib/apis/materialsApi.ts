@@ -17,7 +17,7 @@ function buildMaterialQuery(params: MaterialListParams = {}) {
   return queryString ? `/materials?${queryString}` : '/materials';
 }
 
-export function getMaterials(token: string, params?: MaterialListParams) {
+export function getMaterials(token: string | null, params?: MaterialListParams) {
   return apiRequest<Material[]>(buildMaterialQuery(params), {
     token,
     action: 'materials.list',

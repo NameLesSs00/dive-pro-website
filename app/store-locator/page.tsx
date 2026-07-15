@@ -7,12 +7,7 @@ import { FiChevronDown, FiHeadphones, FiMail, FiMapPin, FiNavigation, FiPhone, F
 import ApiErrorMessage from '@/components/api/ApiErrorMessage';
 import { usePublicLocators } from '@/features/locators/locatorQueries';
 import { Locator } from '@/lib/models/locator';
-
-function toTimeLabel(value: string) {
-  if (!value) return '';
-  const [hours = '', minutes = ''] = value.split(':');
-  return hours && minutes ? `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}` : value;
-}
+import { formatTimeRange24 } from '@/lib/utils/timeFormat';
 
 function getDirectionsHref(locator: Locator) {
   return `https://www.google.com/maps/search/?api=1&query=${locator.latitude},${locator.longitude}`;
@@ -24,7 +19,7 @@ function getEmbedMapHref(locator: Locator) {
 }
 
 function formatHours(locator: Locator) {
-  return `${toTimeLabel(locator.from)} - ${toTimeLabel(locator.to)}`;
+  return formatTimeRange24(locator.from, locator.to);
 }
 
 export default function StoreLocatorPage() {

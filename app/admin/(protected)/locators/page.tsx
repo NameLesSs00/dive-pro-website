@@ -11,6 +11,7 @@ import {
 } from '@/features/locators/locatorQueries';
 import { selectAccessToken } from '@/features/auth/authSelectors';
 import { Locator } from '@/lib/models/locator';
+import { formatTime24, formatTimeRange24 } from '@/lib/utils/timeFormat';
 import { useAppSelector } from '@/store/hooks';
 
 const pageSize = 10;
@@ -28,14 +29,22 @@ const initialForm = {
 type LocatorForm = typeof initialForm;
 type ModalMode = 'create' | 'edit';
 
+const hourOptions = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'));
+const minuteOptions = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, '0'));
+
 function toTimeInputValue(value: string) {
-  if (!value) return '';
-  const [hours = '', minutes = ''] = value.split(':');
-  return hours && minutes ? `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}` : value;
+  return formatTime24(value);
+}
+
+function splitTimeValue(value: string) {
+  const normalized = formatTime24(value);
+  const [hour = '', minute = ''] = normalized.split(':');
+
+  return { hour, minute };
 }
 
 function formatHours(from: string, to: string) {
-  return `${toTimeInputValue(from)} - ${toTimeInputValue(to)}`;
+  return formatTimeRange24(from, to);
 }
 
 function toLocatorForm(locator: Locator): LocatorForm {
@@ -55,11 +64,71 @@ function toLocatorPayload(form: LocatorForm) {
     name: form.name,
     address: form.address,
     phone: form.phone,
-    from: form.from,
-    to: form.to,
+    from: formatTime24(form.from),
+    to: formatTime24(form.to),
     longitude: Number(form.longitude),
     latitude: Number(form.latitude),
   };
+}
+
+function Time24Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { hour, minute } = splitTimeValue(value);
+
+  const handleHourChange = (nextHour: string) => {
+    onChange(nextHour ? `${nextHour}:${minute || '00'}` : '');
+  };
+
+  const handleMinuteChange = (nextMinute: string) => {
+    onChange(nextMinute ? `${hour || '00'}:${nextMinute}` : '');
+  };
+
+  const selectClassName =
+    'h-12 w-full rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] px-3 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white';
+
+  return (
+    <fieldset>
+      <legend className="mb-2 block text-sm font-bold text-[#00113A]">{label}</legend>
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+        <select
+          value={hour}
+          onChange={(event) => handleHourChange(event.target.value)}
+          required
+          className={selectClassName}
+          aria-label={`${label} hour`}
+        >
+          <option value="">HH</option>
+          {hourOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <span className="font-bold text-[#00113A]">:</span>
+        <select
+          value={minute}
+          onChange={(event) => handleMinuteChange(event.target.value)}
+          required
+          className={selectClassName}
+          aria-label={`${label} minute`}
+        >
+          <option value="">MM</option>
+          {minuteOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </div>
+    </fieldset>
+  );
 }
 
 export default function AdminLocatorsPage() {
@@ -438,27 +507,8 @@ export default function AdminLocatorsPage() {
               </label>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <label className="block">
-                  <span className="mb-2 block text-sm font-bold text-[#00113A]">From</span>
-                  <input
-                    type="time"
-                    value={form.from}
-                    onChange={(event) => updateForm('from', event.target.value)}
-                    required
-                    className="h-12 w-full rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] px-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-2 block text-sm font-bold text-[#00113A]">To</span>
-                  <input
-                    type="time"
-                    value={form.to}
-                    onChange={(event) => updateForm('to', event.target.value)}
-                    required
-                    className="h-12 w-full rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] px-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
-                  />
-                </label>
+                <Time24Field label="From" value={form.from} onChange={(value) => updateForm('from', value)} />
+                <Time24Field label="To" value={form.to} onChange={(value) => updateForm('to', value)} />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">

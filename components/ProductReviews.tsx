@@ -1,236 +1,233 @@
 "use client";
 
-import { useState } from "react";
-import {
-  motion,
-  useMotionValue,
-  useTransform,
-  animate,
-} from "framer-motion";
-import { FiChevronLeft, FiChevronRight, FiStar } from "react-icons/fi";
+import { FormEvent, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { FiCheckCircle, FiStar } from "react-icons/fi";
+import ApiErrorMessage from "@/components/api/ApiErrorMessage";
+import { useCreateReview } from "@/features/reviews/reviewQueries";
+import { ProductReviewSummary } from "@/lib/models/product";
 
-const DUMMY_REVIEWS = [
-  {
-    id: 1,
-    author: "Alex",
-    title: "Nature Lover",
-    text: `"I rely on my GHI Dry Snorkel for all my snorkeling trips. The innovative design with a splash guard and purge valve allows for easy breathing and prevents water from entering the snorkel. It's comfortable to use, even during long snorkeling sessions, and has enhanced my overall snorkeling experience."`,
-    bgColor: "#EEF3FF",
-  },
-  {
-    id: 2,
-    author: "Sarah",
-    title: "Deep Sea Diver",
-    text: `"Absolutely fantastic build quality. The neoprene is extremely flexible and provides excellent thermal protection in colder waters. I particularly like the robust zipper and the reinforced knee pads which add great durability for rougher entry points."`,
-    bgColor: "#F3F4F6",
-  },
-  {
-    id: 3,
-    author: "Marcus",
-    title: "Instructor",
-    text: `"Great suit for the price. The fit is true to the sizing chart, and it looks really sleek underwater. The only minor issue is that the neck seal could be slightly tighter, but overall it performs exceptionally well during my weekend dives."`,
-    bgColor: "#E8F5E9",
-  },
-];
+type ProductReviewsProps = {
+  productId: number;
+  summary?: ProductReviewSummary;
+};
 
-const TOTAL = DUMMY_REVIEWS.length;
+const initialForm = {
+  name: "",
+  email: "",
+  comment: "",
+};
 
-export default function ProductReviews() {
-  const [index, setIndex] = useState(0);
-  const [isBusy, setIsBusy] = useState(false);
-  const [selectedRating, setSelectedRating] = useState(0);
+function RatingStars({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange?: (value: number) => void;
+}) {
   const [hoveredRating, setHoveredRating] = useState(0);
 
-  // Shared motion value — both drag and buttons drive this
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-300, 0, 300], [-18, 0, 18]);
-  const cardOpacity = useTransform(x, [-200, 0, 200], [0, 1, 0]);
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => {
+        const isLit = star <= (hoveredRating || value);
 
-  const flyOff = async (direction: "left" | "right") => {
-    if (isBusy) return;
-    setIsBusy(true);
-    const target = direction === "right" ? 700 : -700;
-    await animate(x, target, { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] });
-    // Reset x instantly (no visible flash — card changes at the same time)
-    x.set(0);
-    if (direction === "right") {
-      setIndex((prev) => (prev + 1) % TOTAL);
-    } else {
-      setIndex((prev) => (prev - 1 + TOTAL) % TOTAL);
+        if (!onChange) {
+          return (
+            <FiStar
+              key={star}
+              className={`h-5 w-5 ${isLit ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+            />
+          );
+        }
+
+        return (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            onMouseEnter={() => setHoveredRating(star)}
+            onMouseLeave={() => setHoveredRating(0)}
+            className="transition-transform hover:scale-110"
+            aria-label={`${star} star${star > 1 ? "s" : ""}`}
+          >
+            <FiStar
+              className={`h-8 w-8 transition-colors ${isLit ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function ProductReviews({ productId, summary }: ProductReviewsProps) {
+  const createReviewMutation = useCreateReview();
+  const [rating, setRating] = useState(0);
+  const [form, setForm] = useState(initialForm);
+  const [validationError, setValidationError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const averageRate = Number(summary?.averageRate ?? 0);
+  const totalReviews = Number(summary?.totalReviews ?? 0);
+
+  const ratingRows = useMemo(() => {
+    const roundedAverage = Math.round(averageRate);
+    return [5, 4, 3, 2, 1].map((star) => ({
+      star,
+      width: totalReviews > 0 && star === roundedAverage ? 100 : 0,
+    }));
+  }, [averageRate, totalReviews]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setValidationError("");
+    setSuccessMessage("");
+
+    if (!rating) {
+      setValidationError("Please choose a rating before submitting your review.");
+      return;
     }
-    setIsBusy(false);
-  };
 
-  const handleDragEnd = (_: unknown, info: { offset: { x: number } }) => {
-    const threshold = 100;
-    if (info.offset.x > threshold) {
-      flyOff("right");
-    } else if (info.offset.x < -threshold) {
-      flyOff("left");
-    } else {
-      animate(x, 0, { type: "spring", stiffness: 250, damping: 30 });
+    if (!form.name.trim() || !form.email.trim() || !form.comment.trim()) {
+      setValidationError("Please fill in your name, email, and review.");
+      return;
+    }
+
+    try {
+      await createReviewMutation.mutateAsync({
+        productId,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        comment: form.comment.trim(),
+        rate: rating,
+      });
+
+      setForm(initialForm);
+      setRating(0);
+      setSuccessMessage("Thank you. Your review was submitted successfully.");
+    } catch {
+      setSuccessMessage("");
     }
   };
-
-  const review = DUMMY_REVIEWS[index];
-  const nextReview = DUMMY_REVIEWS[(index + 1) % TOTAL];
 
   return (
-    <div className="w-full mt-16 mb-24">
-
-      {/* ── Rating + Card Slider ── */}
-      <div className="flex flex-col lg:flex-row gap-16 items-center lg:items-stretch mb-20">
-
-        {/* Left: Star rating summary */}
-        <div className="w-full lg:w-1/3 flex flex-col items-center lg:items-start justify-center">
-          <div className="flex items-end gap-2 mb-4">
-            <span className="text-6xl md:text-7xl font-bold text-[#00113A]">4.5</span>
-            <FiStar className="w-10 h-10 text-yellow-400 fill-yellow-400 mb-2" />
+    <section className="mt-16 w-full">
+      <div className="grid gap-8 rounded-[28px] border border-[#D9E4F5] bg-[#F7FAFF] p-4 md:p-6 lg:grid-cols-[0.85fr_1.15fr] lg:p-8">
+        <motion.div
+          className="rounded-[24px] bg-white p-6 shadow-[0_18px_50px_rgba(0,17,58,0.06)]"
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.45 }}
+        >
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#0037AD]">Customer reviews</p>
+          <div className="mt-5 flex items-end gap-3">
+            <span className="text-6xl font-extrabold leading-none text-[#00113A] md:text-7xl">
+              {averageRate.toFixed(1)}
+            </span>
+            <FiStar className="mb-2 h-10 w-10 fill-yellow-400 text-yellow-400" />
           </div>
-          <div className="bg-[#00113A] text-white text-sm px-4 py-1.5 rounded-full mb-8">
-            653 reviews
-          </div>
+          <p className="mt-3 text-sm font-bold text-[#5E6675]">
+            {totalReviews} review{totalReviews === 1 ? "" : "s"}
+          </p>
 
-          <div className="w-full max-w-[250px] space-y-3">
-            {[5, 4, 3, 2, 1].map((star) => (
-              <div key={star} className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700 w-3">{star}</span>
-                <FiStar className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-yellow-400 rounded-full"
-                    style={{
-                      width: `${star === 5 ? 70 : star === 4 ? 20 : star === 3 ? 5 : star === 2 ? 3 : 2}%`,
-                    }}
+          <div className="mt-8 space-y-3">
+            {ratingRows.map((row) => (
+              <div key={row.star} className="flex items-center gap-3">
+                <span className="w-3 text-sm font-bold text-[#00113A]">{row.star}</span>
+                <FiStar className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#E5ECF8]">
+                  <motion.div
+                    className="h-full rounded-full bg-yellow-400"
+                    initial={{ width: 0 }}
+                    whileInView={{ width: `${row.width}%` }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
                   />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Right: Swipeable card */}
-        <div className="w-full lg:w-2/3 flex flex-col gap-4 overflow-hidden">
+        <motion.form
+          onSubmit={handleSubmit}
+          className="rounded-[24px] bg-white p-6 shadow-[0_18px_50px_rgba(0,17,58,0.06)]"
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.45, delay: 0.08 }}
+        >
+          <h3 className="text-2xl font-extrabold text-[#00113A]">Add Review</h3>
+          <p className="mt-2 text-sm leading-6 text-[#5E6675]">
+            Share your experience with this product. Your email will not be shown publicly.
+          </p>
 
-          {/* Card area — full width */}
-          <div className="w-full overflow-hidden">
-            <div className="relative w-full" style={{ height: "360px" }}>
+          <div className="mt-6">
+            <span className="mb-2 block text-sm font-bold text-[#00113A]">Rating</span>
+            <RatingStars value={rating} onChange={setRating} />
+          </div>
 
-              {/* Ghost card peeking behind */}
-              <div
-                className="absolute inset-0 rounded-3xl scale-95 translate-y-3 opacity-40"
-                style={{ backgroundColor: nextReview.bgColor }}
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="mb-2 block text-sm font-bold text-[#00113A]">Name</span>
+              <input
+                value={form.name}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                className="h-12 w-full rounded-xl border border-[#D9E4F5] bg-[#F7FAFF] px-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
+                placeholder="Your name"
               />
-
-              {/* Active swipeable card */}
-              <motion.div
-                key={index}
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.9}
-                onDragEnd={handleDragEnd}
-                style={{
-                  x,
-                  rotate,
-                  opacity: cardOpacity,
-                  backgroundColor: review.bgColor,
-                }}
-                className="absolute inset-0 rounded-3xl p-8 md:p-10 shadow-md cursor-grab active:cursor-grabbing select-none"
-              >
-                {/* Decorative quote */}
-                <div className="absolute top-8 right-10 text-[120px] font-serif leading-none text-black/10 pointer-events-none select-none">
-                  "
-                </div>
-
-                {/* Badge */}
-                <div className="inline-block bg-white/60 text-[#0037AD] text-xs font-bold px-3 py-1 rounded-full mb-5">
-                  {review.id} of {TOTAL}
-                </div>
-
-                <p className="text-[#00113A] text-base md:text-lg leading-relaxed mb-8 relative z-10 min-h-[150px]">
-                  {review.text}
-                </p>
-
-                <div className="pt-5 border-t border-gray-200/60">
-                  <h4 className="font-bold text-[#00113A] text-base">{review.author}</h4>
-                  <p className="text-sm text-gray-500">{review.title}</p>
-                </div>
-              </motion.div>
-            </div>
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-bold text-[#00113A]">Email</span>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+                className="h-12 w-full rounded-xl border border-[#D9E4F5] bg-[#F7FAFF] px-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
+                placeholder="you@example.com"
+              />
+            </label>
           </div>
 
-          {/* Buttons below the card */}
-          <div className="flex items-center justify-center gap-4">
-            <button
-              onClick={() => flyOff("left")}
-              disabled={isBusy}
-              className="flex w-12 h-12 items-center justify-center rounded-full border border-[#0037AD] text-[#0037AD] hover:bg-blue-50 transition-colors disabled:opacity-40 cursor-pointer"
-            >
-              <FiChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={() => flyOff("right")}
-              disabled={isBusy}
-              className="flex w-12 h-12 items-center justify-center rounded-full border border-[#0037AD] text-[#0037AD] hover:bg-blue-50 transition-colors disabled:opacity-40 cursor-pointer"
-            >
-              <FiChevronRight className="w-6 h-6" />
-            </button>
-          </div>
+          <label className="mt-5 block">
+            <span className="mb-2 block text-sm font-bold text-[#00113A]">Review</span>
+            <textarea
+              value={form.comment}
+              onChange={(event) => setForm((current) => ({ ...current, comment: event.target.value }))}
+              className="min-h-[130px] w-full resize-y rounded-xl border border-[#D9E4F5] bg-[#F7FAFF] px-4 py-3 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
+              placeholder="Tell us what you think..."
+            />
+          </label>
 
-        </div>
-      </div>
-
-      {/* ── Add Review ── */}
-      <div className="w-full max-w-3xl">
-        <h3 className="text-xl font-bold text-[#00113A] mb-2">Add Review</h3>
-        <p className="text-gray-500 text-sm mb-6">
-          Your email address will not be published. Required fields are marked{" "}
-          <span className="text-red-500">*</span>
-        </p>
-
-        <div className="mb-6">
-          <span className="block text-sm font-medium text-[#00113A] mb-2">Review</span>
-          <div className="flex gap-1">
-            {[1, 2, 3, 4, 5].map((star) => {
-              const isLit = star <= (hoveredRating || selectedRating);
-              return (
-                <button
-                  key={star}
-                  onClick={() => setSelectedRating(star)}
-                  onMouseEnter={() => setHoveredRating(star)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  className="cursor-pointer transition-transform hover:scale-110"
-                >
-                  <FiStar
-                    className={`w-7 h-7 transition-colors duration-150 ${
-                      isLit
-                        ? "text-yellow-400 fill-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                  />
-                </button>
-              );
-            })}
-          </div>
-          {selectedRating > 0 && (
-            <p className="text-sm text-gray-500 mt-2">
-              You selected <span className="font-semibold text-yellow-500">{selectedRating} star{selectedRating > 1 ? "s" : ""}</span>
+          {validationError && (
+            <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">
+              {validationError}
             </p>
           )}
-        </div>
 
-        <div className="mb-6">
-          <span className="block text-sm font-medium text-[#00113A] mb-2">Comment</span>
-          <textarea
-            className="w-full border border-gray-200 rounded-xl p-4 min-h-[120px] outline-none focus:border-[#0037AD] focus:ring-1 focus:ring-[#0037AD] transition-all resize-y"
-            placeholder="Text..."
-          />
-        </div>
+          {createReviewMutation.isError && (
+            <div className="mt-4">
+              <ApiErrorMessage error={createReviewMutation.error} title="Could not submit review" />
+            </div>
+          )}
 
-        <button className="w-full md:w-auto md:min-w-[200px] bg-[#0037AD] text-white font-bold py-3 px-8 rounded-full hover:bg-blue-800 transition-colors cursor-pointer">
-          Submit Review
-        </button>
+          {successMessage && (
+            <div className="mt-4 flex gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-900">
+              <FiCheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-700" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={createReviewMutation.isPending}
+            className="mt-6 h-12 w-full rounded-full bg-[#0037AD] px-8 font-bold text-white transition-colors hover:bg-[#00267A] disabled:opacity-70 md:w-auto"
+          >
+            {createReviewMutation.isPending ? "Submitting..." : "Submit Review"}
+          </button>
+        </motion.form>
       </div>
-    </div>
+    </section>
   );
 }

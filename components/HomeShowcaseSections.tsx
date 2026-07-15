@@ -5,39 +5,13 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FaArrowRight } from 'react-icons/fa';
 import { FiAward, FiHeadphones, FiHeart, FiShield, FiTool } from 'react-icons/fi';
-
-const categories = [
-  { title: 'Regulators', count: '15 Products', img: '/categories/dummy/1ba5f7c04f90e6dc8bca640f5d9edc45d7d0a801.jpg' },
-  { title: 'B.C.D.s', count: '10 Products', img: '/categories/dummy/2f9fb533b5b75d5a9ab81611b2379efb9bf8b195.png' },
-  { title: 'Masks & Snorkels', count: '10 Products', img: '/categories/dummy/c0be01179f2125de455b8d8b77ca579d8b567492.png' },
-  { title: 'Wetsuits', count: '15 Products', img: '/categories/dummy/e647b72f6e734ad63a8a86884ca044180c4965cc.png' },
-  { title: 'Fins', count: '15 Products', img: '/categories/dummy/d65ad75af8f298fcaf546795cd58e7b70c15be84.png' },
-  { title: 'Bags & Accessories', count: '15 Products', img: '/categories/dummy/2f9fb533b5b75d5a9ab81611b2379efb9bf8b195.png' },
-];
-
-const products = [
-  { id: '1', title: 'Jet Fin', subtitle: 'Fins', imageSrc: '/products/Dumm/iamge3.png' },
-  { id: '2', title: 'Coral Shorty Suit', subtitle: 'Wetsuits', imageSrc: '/products/Dumm/iamge1.png' },
-  { id: '3', title: 'Manta', subtitle: 'B.C.D.s', imageSrc: '/products/Dumm/iamge4.png' },
-];
-
-const guides = [
-  {
-    title: 'How to Choose the Right Diving Regulator',
-    desc: 'Learn the key factors to consider when selecting a regulator for maximum performance and safety.',
-    img: '/categories/dummy/1ba5f7c04f90e6dc8bca640f5d9edc45d7d0a801.jpg',
-  },
-  {
-    title: 'Essential Diving Equipment for Beginners',
-    desc: 'A guide to must-have gear for new divers, including masks, fins, BCDs, and safety accessories.',
-    img: '/categories/dummy/2f9fb533b5b75d5a9ab81611b2379efb9bf8b195.png',
-  },
-  {
-    title: 'Finding the Perfect Wetsuit Fit',
-    desc: 'A complete guide to choosing the correct wetsuit for warmth, comfort, and performance in any condition.',
-    img: '/Home/heroImage.jpg',
-  },
-];
+import ApiErrorMessage from '@/components/api/ApiErrorMessage';
+import HomeBlogGuides from '@/components/blogs/HomeBlogGuides';
+import { usePublicCategories } from '@/features/categories/categoryQueries';
+import { usePublicProducts } from '@/features/products/productQueries';
+import { useWishlistIds } from '@/features/wishlist/wishlistStorage';
+import { getApiAssetUrl } from '@/lib/config/api';
+import { getProductImage, getProductSubtitle } from '@/lib/utils/productDisplay';
 
 const features = [
   { icon: <FiShield />, title: 'Safety First', desc: 'Engineered to the highest safety standards for peace of mind underwater.' },
@@ -45,6 +19,8 @@ const features = [
   { icon: <FiTool />, title: 'Innovative Design', desc: 'Thoughtful features that enhance comfort, ease of use, and efficiency.' },
   { icon: <FiHeadphones />, title: 'Expert Support', desc: 'Our team is here to help you every step of the way.' },
 ];
+
+const fallbackCategoryImage = '/products/Dumm/iamge1.png';
 
 const sectionIntro = {
   hidden: { opacity: 0, y: 22 },
@@ -83,50 +59,95 @@ function SectionHeading({
 }
 
 export default function HomeShowcaseSections() {
+  const categoriesQuery = usePublicCategories({ pageNumber: 1, pageSize: 100, search: '' });
+  const productsQuery = usePublicProducts({ pageNumber: 1, pageSize: 12, search: '' });
+  const wishlist = useWishlistIds();
+  const categories = categoriesQuery.data?.categories ?? [];
+  const liveProducts = productsQuery.data?.products ?? [];
+  const products = (liveProducts.filter((product) => product.isFeatured).length
+    ? liveProducts.filter((product) => product.isFeatured)
+    : liveProducts
+  ).slice(0, 3);
+
   return (
     <>
       <section className="bg-[#c4d6fd] py-12 md:py-24">
         <div className="container mx-auto max-w-7xl px-4">
           <SectionHeading eyebrow="Shop by need" title="Equipment Categories" />
 
-          <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-5 md:mx-0 md:grid md:grid-cols-2 md:gap-7 md:overflow-visible md:px-0 lg:grid-cols-3">
-            {categories.map((category, index) => (
-              <motion.div
-                key={category.title}
-                className="min-w-[88%] snap-center md:min-w-0"
-                initial={{ opacity: 0, y: 28 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ delay: index * 0.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <Link
-                  href="/categories"
-                  className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-[0_18px_45px_rgba(0,17,58,0.10)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,17,58,0.16)]"
-                >
-                  <div className="relative mx-4 mt-4 flex h-72 items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-[#F8FBFF] to-[#EAF1FF] p-6 md:h-64">
-                    <Image
-                      src={category.img}
-                      alt={category.title}
-                      fill
-                      sizes="(max-width: 768px) 88vw, 33vw"
-                      className="object-contain p-6 transition-transform duration-700 group-hover:scale-110"
-                    />
+          {categoriesQuery.isLoading && (
+            <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-5 md:mx-0 md:grid md:grid-cols-2 md:gap-7 md:overflow-visible md:px-0 lg:grid-cols-3">
+              {Array.from({ length: 6 }, (_, index) => (
+                <div key={index} className="min-w-[88%] overflow-hidden rounded-[28px] border border-white/70 bg-white md:min-w-0">
+                  <div className="mx-4 mt-4 h-72 animate-pulse rounded-3xl bg-[#EAF1FF] md:h-64" />
+                  <div className="space-y-3 p-6">
+                    <div className="h-7 animate-pulse rounded bg-[#EAF1FF]" />
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-[#F2F6FF]" />
                   </div>
-                  <div className="flex items-end justify-between gap-4 p-5 md:p-6">
-                    <div>
-                      <h3 className="text-2xl font-extrabold leading-tight text-[#0037AD] md:text-xl lg:text-2xl">
-                        {category.title}
-                      </h3>
-                      <p className="mt-1 text-sm font-semibold text-[#6B7280]">{category.count}</p>
-                    </div>
-                    <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#EAF1FF] text-[#0037AD] transition-transform duration-300 group-hover:translate-x-1 group-hover:bg-[#0037AD] group-hover:text-white">
-                      <FaArrowRight />
-                    </span>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {categoriesQuery.isError && (
+            <div className="mx-auto max-w-2xl">
+              <ApiErrorMessage error={categoriesQuery.error} title="Could not load categories" />
+            </div>
+          )}
+
+          {!categoriesQuery.isLoading && !categoriesQuery.isError && categories.length > 0 && (
+            <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-5 md:mx-0 md:grid md:grid-cols-2 md:gap-7 md:overflow-visible md:px-0 lg:grid-cols-3">
+              {categories.map((category, index) => {
+                const imageSrc = getApiAssetUrl(category.imageUrl) || fallbackCategoryImage;
+
+                return (
+                  <motion.div
+                    key={category.id}
+                    className="min-w-[88%] snap-center md:min-w-0"
+                    initial={{ opacity: 0, y: 28 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.25 }}
+                    transition={{ delay: index * 0.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <Link
+                      href={`/products?categoryId=${category.id}`}
+                      className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-[0_18px_45px_rgba(0,17,58,0.10)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,17,58,0.16)]"
+                    >
+                      <div className="relative mx-4 mt-4 flex h-72 items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-[#F8FBFF] to-[#EAF1FF] p-6 md:h-64">
+                        <Image
+                          src={imageSrc}
+                          alt={category.name}
+                          fill
+                          sizes="(max-width: 768px) 88vw, 33vw"
+                          className="object-contain p-6 transition-transform duration-700 group-hover:scale-110"
+                        />
+                      </div>
+                      <div className="flex items-end justify-between gap-4 p-5 md:p-6">
+                        <div className="min-w-0">
+                          <h3 className="break-words text-2xl font-extrabold leading-tight text-[#0037AD] [overflow-wrap:anywhere] md:text-xl lg:text-2xl">
+                            {category.name}
+                          </h3>
+                          <p className="mt-1 text-sm font-semibold text-[#6B7280]">
+                            {category.productCount} {category.productCount === 1 ? 'Product' : 'Products'}
+                          </p>
+                        </div>
+                        <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-[#EAF1FF] text-[#0037AD] transition-transform duration-300 group-hover:translate-x-1 group-hover:bg-[#0037AD] group-hover:text-white">
+                          <FaArrowRight />
+                        </span>
+                      </div>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+
+          {!categoriesQuery.isLoading && !categoriesQuery.isError && categories.length === 0 && (
+            <div className="rounded-[28px] border border-white/70 bg-white px-6 py-12 text-center shadow-[0_18px_45px_rgba(0,17,58,0.08)]">
+              <h3 className="text-xl font-extrabold text-[#00113A]">No categories yet</h3>
+              <p className="mt-2 text-[#5E6675]">Equipment categories will appear here once they are published.</p>
+            </div>
+          )}
 
           <motion.div
             className="mt-5 text-center md:mt-12"
@@ -146,8 +167,26 @@ export default function HomeShowcaseSections() {
         <div className="container mx-auto max-w-7xl px-4">
           <SectionHeading eyebrow="Popular picks" title="Best Selling Products" dark />
 
-          <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-6 md:mx-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:px-0">
-            {products.map((product, index) => (
+          {productsQuery.isLoading && (
+            <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-6 md:mx-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:px-0">
+              {[0, 1, 2].map((item) => (
+                <div key={item} className="min-w-[86%] rounded-[30px] bg-white p-4 md:min-w-0">
+                  <div className="h-72 animate-pulse rounded-[24px] bg-[#EAF1FF]" />
+                  <div className="mt-5 h-8 animate-pulse rounded bg-[#F2F6FF]" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {productsQuery.isError && (
+            <div className="mx-auto max-w-2xl">
+              <ApiErrorMessage error={productsQuery.error} title="Could not load products" />
+            </div>
+          )}
+
+          {!productsQuery.isLoading && !productsQuery.isError && products.length > 0 && (
+            <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-6 md:mx-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:px-0">
+              {products.map((product, index) => (
               <motion.article
                 key={product.id}
                 className="group min-w-[86%] snap-center overflow-hidden rounded-[30px] border border-white/12 bg-white p-4 shadow-[0_22px_65px_rgba(0,0,0,0.28)] md:min-w-0"
@@ -157,12 +196,18 @@ export default function HomeShowcaseSections() {
                 transition={{ delay: index * 0.08, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               >
                 <div className="relative flex h-72 items-center justify-center overflow-hidden rounded-[24px] bg-gradient-to-br from-[#F7FAFF] to-[#EAF1FF] p-8">
-                  <button className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#0037AD] shadow-md transition-transform group-hover:scale-110" aria-label={`Save ${product.title}`}>
-                    <FiHeart className="h-5 w-5" />
+                  <button
+                    type="button"
+                    onClick={() => wishlist.toggle(product.id)}
+                    className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#0037AD] shadow-md transition-transform group-hover:scale-110"
+                    aria-label={wishlist.has(product.id) ? `Remove ${product.name} from wishlist` : `Save ${product.name}`}
+                    aria-pressed={wishlist.has(product.id)}
+                  >
+                    <FiHeart className={`h-5 w-5 ${wishlist.has(product.id) ? 'fill-current' : ''}`} />
                   </button>
                   <Image
-                    src={product.imageSrc}
-                    alt={product.title}
+                    src={getProductImage(product)}
+                    alt={product.name}
                     fill
                     sizes="(max-width: 768px) 86vw, 33vw"
                     className="object-contain p-8 transition-transform duration-700 group-hover:scale-110"
@@ -170,22 +215,30 @@ export default function HomeShowcaseSections() {
                 </div>
                 <div className="flex items-end justify-between gap-4 px-2 pb-2 pt-5">
                   <div>
-                    <p className="text-sm font-bold text-[#6B7280]">{product.subtitle}</p>
-                    <h3 className="mt-1 text-2xl font-extrabold text-[#0037AD]">{product.title}</h3>
+                    <p className="text-sm font-bold text-[#6B7280]">{getProductSubtitle(product)}</p>
+                    <h3 className="mt-1 break-words text-2xl font-extrabold text-[#0037AD] [overflow-wrap:anywhere]">{product.name}</h3>
                   </div>
                   <Link href={`/products/${product.id}`} className="inline-flex h-10 flex-shrink-0 items-center justify-center gap-2 rounded-full bg-[#0037AD] px-4 text-xs font-bold text-white transition-colors hover:bg-[#00267A]">
                     Details <FaArrowRight className="text-[10px]" />
                   </Link>
                 </div>
               </motion.article>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
-          <div className="mt-3 flex justify-center gap-2 md:mt-10">
+          {!productsQuery.isLoading && !productsQuery.isError && products.length === 0 && (
+            <div className="rounded-[28px] border border-white/10 bg-white/8 px-6 py-12 text-center text-white">
+              <h3 className="text-xl font-extrabold">No products yet</h3>
+              <p className="mt-2 text-white/70">Featured products will appear here once they are published.</p>
+            </div>
+          )}
+
+          {products.length > 0 && <div className="mt-3 flex justify-center gap-2 md:mt-10">
             {products.map((product, index) => (
               <span key={product.id} className={`h-2.5 rounded-full ${index === 0 ? 'w-8 bg-white' : 'w-2.5 bg-white/35'}`} />
             ))}
-          </div>
+          </div>}
         </div>
       </section>
 
@@ -213,55 +266,7 @@ export default function HomeShowcaseSections() {
         </div>
       </section>
 
-      <section className="bg-[#F8FAFE] py-12 md:py-24">
-        <div className="container mx-auto max-w-6xl px-4">
-          <SectionHeading eyebrow="Learn before you dive" title="Diving Tips & Guides" />
-
-          <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-5 md:mx-0 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:px-0">
-            {guides.map((guide, index) => (
-              <motion.article
-                key={guide.title}
-                className="group flex min-w-[86%] snap-center flex-col overflow-hidden rounded-[28px] border border-[#E5ECF8] bg-white shadow-[0_18px_45px_rgba(0,17,58,0.08)] md:min-w-0"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ delay: index * 0.08, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <div className="relative h-56 overflow-hidden md:h-60">
-                  <Image
-                    src={guide.img}
-                    alt={guide.title}
-                    fill
-                    sizes="(max-width: 768px) 86vw, 33vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                </div>
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="line-clamp-2 text-xl font-extrabold leading-tight text-[#00113A] transition-colors group-hover:text-[#0037AD]">
-                    {guide.title}
-                  </h3>
-                  <p className="mt-4 line-clamp-3 flex-1 text-sm leading-6 text-[#5E6675]">{guide.desc}</p>
-                  <Link href="/blogs" className="mt-6 inline-flex items-center gap-2 text-sm font-extrabold text-[#0037AD]">
-                    Read more <FaArrowRight className="text-xs" />
-                  </Link>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-
-          <motion.div
-            className="mt-5 text-center md:mt-12"
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <Link href="/blogs" className="inline-flex h-12 items-center justify-center gap-2 rounded-full border-2 border-[#0037AD] bg-white px-8 font-bold text-[#0037AD] transition-colors hover:bg-[#0037AD] hover:text-white">
-              See More Guides <FaArrowRight className="text-sm" />
-            </Link>
-          </motion.div>
-        </div>
-      </section>
+      <HomeBlogGuides />
     </>
   );
 }

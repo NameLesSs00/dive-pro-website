@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { FiSearch, FiMenu, FiX, FiHeart } from 'react-icons/fi';
+import { usePathname, useRouter } from 'next/navigation';
+import { FiChevronDown, FiHeart, FiMenu, FiSearch, FiX } from 'react-icons/fi';
+import { useWishlistIds } from '@/features/wishlist/wishlistStorage';
+import { getCategories } from '@/lib/apis/categoriesApi';
+import { getSubCategories } from '@/lib/apis/subCategoriesApi';
+import { getApiAssetUrl } from '@/lib/config/api';
+import { Category } from '@/lib/models/category';
+import { SubCategory } from '@/lib/models/subCategory';
 
 const navLinks = [
   { href: '/', label: 'Home' },
@@ -13,6 +19,7 @@ const navLinks = [
   { href: '/about-us', label: 'About us' },
   { href: '/contact-us', label: 'contact us' },
   { href: '/blogs', label: 'Blogs' },
+  { href: '/faq', label: 'FAQ' },
   { href: '/store-locator', label: 'Store Locater' },
 ];
 
@@ -22,9 +29,36 @@ function isActiveNavLink(pathname: string | null, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function getCategoryImage(category: Category) {
+  return getApiAssetUrl(category.imageUrl) || '/products/Dumm/iamge1.png';
+}
+
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false);
+  const [isMobileProductsOpen, setIsMobileProductsOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+  const [activeSubCategoryId, setActiveSubCategoryId] = useState<number | null>(null);
+  const [menuError, setMenuError] = useState('');
+  const [isMenuLoading, setIsMenuLoading] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const wishlist = useWishlistIds();
+
+  const activeCategory = useMemo(() => {
+    return categories.find((category) => category.id === activeCategoryId) ?? categories[0] ?? null;
+  }, [activeCategoryId, categories]);
+
+  const visibleSubCategories = useMemo(() => {
+    if (!activeCategory) return [];
+    return subCategories.filter((subCategory) => subCategory.categoryId === activeCategory.id);
+  }, [activeCategory, subCategories]);
+
+  const activeSubCategory = useMemo(() => {
+    return visibleSubCategories.find((subCategory) => subCategory.id === activeSubCategoryId) ?? visibleSubCategories[0] ?? null;
+  }, [activeSubCategoryId, visibleSubCategories]);
 
   if (pathname?.startsWith('/admin')) {
     return null;
@@ -34,8 +68,68 @@ export default function Header() {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  const ensureProductMenuData = async () => {
+    if (categories.length || isMenuLoading) return;
+
+    setIsMenuLoading(true);
+    setMenuError('');
+
+    try {
+      const [categoriesResponse, subCategoriesResponse] = await Promise.all([
+        getCategories(null, { pageNumber: 1, pageSize: 100, search: '' }),
+        getSubCategories(null, { pageNumber: 1, pageSize: 200, search: '' }),
+      ]);
+
+      setCategories(categoriesResponse.data);
+      setSubCategories(subCategoriesResponse.data);
+      setActiveCategoryId(categoriesResponse.data[0]?.id ?? null);
+    } catch {
+      setMenuError('Could not load product categories.');
+    } finally {
+      setIsMenuLoading(false);
+    }
+  };
+
+  const toggleProductsMenu = () => {
+    const nextIsOpen = !isProductsMenuOpen;
+    setIsProductsMenuOpen(nextIsOpen);
+    if (nextIsOpen) {
+      void ensureProductMenuData();
+    }
+  };
+
+  const toggleMobileProductsMenu = () => {
+    const nextIsOpen = !isMobileProductsOpen;
+    setIsMobileProductsOpen(nextIsOpen);
+    if (nextIsOpen) {
+      void ensureProductMenuData();
+    }
+  };
+
+  const navigateToCategory = (category: Category) => {
+    setIsProductsMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    router.push(`/products?categoryId=${category.id}`);
+  };
+
+  const navigateToSubCategory = (subCategory: SubCategory) => {
+    setIsProductsMenuOpen(false);
+    setIsMobileMenuOpen(false);
+    router.push(`/products?categoryId=${subCategory.categoryId}&subCategoryId=${subCategory.id}`);
+  };
+
+  const handleCategoryClick = (category: Category) => {
+    if (activeCategory?.id === category.id) {
+      navigateToCategory(category);
+      return;
+    }
+
+    setActiveCategoryId(category.id);
+    setActiveSubCategoryId(null);
+  };
+
   return (
-    <header className="bg-white border-b border-gray-200 relative z-50">
+    <header className="relative z-50 border-b border-gray-200 bg-white">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-5">
         {/* Logo Area */}
         <Link href="/" className="flex items-center flex-shrink-0">
@@ -52,6 +146,24 @@ export default function Header() {
         <nav className="hidden lg:flex items-center gap-5 xl:gap-6 text-sm font-medium text-gray-700">
           {navLinks.map((link) => {
             const isActive = isActiveNavLink(pathname, link.href);
+
+            if (link.href === '/products') {
+              return (
+                <button
+                  key={link.href}
+                  type="button"
+                  onClick={toggleProductsMenu}
+                  aria-expanded={isProductsMenuOpen}
+                  className={`relative whitespace-nowrap px-1 py-2 transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:rounded-full after:bg-[#0037AD] after:transition-all ${
+                    isActive || isProductsMenuOpen
+                      ? 'font-bold text-[#0037AD] after:w-full'
+                      : 'text-gray-700 after:w-0 hover:text-[#04328E] hover:after:w-full'
+                  }`}
+                >
+                  {link.label}
+                </button>
+              );
+            }
 
             return (
               <Link
@@ -87,10 +199,15 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-2">
             <Link
               href="/wishlist"
-              className="w-10 h-10 rounded-full bg-gray-50 text-[#0037AD] flex items-center justify-center hover:bg-[#EEF3FF] transition-colors"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-[#0037AD] transition-colors hover:bg-[#EEF3FF]"
               aria-label="Wishlist"
             >
               <FiHeart className="w-5 h-5" />
+              {wishlist.ids.length > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#0037AD] px-1 text-[11px] font-bold text-white">
+                  {wishlist.ids.length}
+                </span>
+              )}
             </Link>
           </div>
 
@@ -104,6 +221,116 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      {isProductsMenuOpen && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[-1] hidden cursor-default lg:block"
+            aria-label="Close products menu"
+            onClick={() => setIsProductsMenuOpen(false)}
+          />
+          <div className="absolute left-1/2 top-full z-50 hidden w-[min(675px,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-b-md border border-[#E3E7EF] bg-white shadow-[0_24px_70px_rgba(0,17,58,0.16)] lg:block">
+            {isMenuLoading ? (
+              <div className="grid h-[360px] grid-cols-3 gap-px bg-[#E3E7EF]">
+                {[0, 1, 2].map((column) => (
+                  <div key={column} className="bg-white p-4">
+                    {[0, 1, 2, 3, 4].map((item) => (
+                      <div key={item} className="mb-4 h-10 animate-pulse rounded bg-[#F2F6FF]" />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : menuError ? (
+              <div className="p-8 text-center text-sm font-bold text-red-600">{menuError}</div>
+            ) : (
+              <div className="grid min-h-[360px] grid-cols-[1.05fr_0.95fr_1fr]">
+                <div className="p-1">
+                  {categories.map((category) => {
+                    const isActive = activeCategory?.id === category.id;
+
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        onClick={() => handleCategoryClick(category)}
+                        className={`flex h-[61px] w-full items-center gap-3 rounded-md px-2 text-left transition-colors ${
+                          isActive ? 'bg-[#EEF3FF]' : 'hover:bg-[#F7FAFF]'
+                        }`}
+                      >
+                        <span className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-[#F3F7FF]">
+                          <Image
+                            src={getCategoryImage(category)}
+                            alt={category.name}
+                            fill
+                            sizes="56px"
+                            className="object-contain p-1"
+                          />
+                        </span>
+                        <span className="min-w-0 flex-1 break-words text-lg font-medium text-[#4A4A4A] [overflow-wrap:anywhere]">
+                          {category.name}
+                        </span>
+                        <span className="text-2xl font-bold leading-none text-[#0037AD]">→</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="border-l border-[#E3E7EF]">
+                  {visibleSubCategories.length ? (
+                    visibleSubCategories.map((subCategory) => {
+                      const isActive = activeSubCategory?.id === subCategory.id;
+
+                      return (
+                        <button
+                          key={subCategory.id}
+                          type="button"
+                          onMouseEnter={() => setActiveSubCategoryId(subCategory.id)}
+                          onFocus={() => setActiveSubCategoryId(subCategory.id)}
+                          onClick={() => navigateToSubCategory(subCategory)}
+                          className={`flex h-[52px] w-full items-center justify-between gap-3 px-5 text-left text-lg font-medium transition-colors ${
+                            isActive ? 'text-[#0037AD]' : 'text-[#4A4A4A] hover:bg-[#F7FAFF] hover:text-[#0037AD]'
+                          }`}
+                        >
+                          <span className="min-w-0 break-words [overflow-wrap:anywhere]">{subCategory.name}</span>
+                          <span className="text-2xl font-bold leading-none text-[#0037AD]">→</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="px-5 py-8 text-sm font-semibold text-[#6B7280]">No subcategories yet.</div>
+                  )}
+                </div>
+
+                <div className="border-l border-[#E3E7EF]">
+                  {activeSubCategory ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => navigateToSubCategory(activeSubCategory)}
+                        className="flex h-[52px] w-full items-center px-5 text-left text-lg font-medium text-[#4A4A4A] transition-colors hover:bg-[#F7FAFF] hover:text-[#0037AD]"
+                      >
+                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{activeSubCategory.name}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => activeCategory && navigateToCategory(activeCategory)}
+                        className="flex h-[52px] w-full items-center border-t border-[#E3E7EF] px-5 text-left text-lg font-medium text-[#4A4A4A] transition-colors hover:bg-[#F7FAFF] hover:text-[#0037AD]"
+                      >
+                        All {activeCategory?.name}
+                      </button>
+                    </>
+                  ) : (
+                    <div className="px-5 py-8 text-sm font-semibold text-[#6B7280]">
+                      Select a subcategory to continue.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
@@ -122,6 +349,69 @@ export default function Header() {
 
           {navLinks.map((link) => {
             const isActive = isActiveNavLink(pathname, link.href);
+
+            if (link.href === '/products') {
+              return (
+                <div key={link.href} className="rounded bg-[#F8FAFE]">
+                  <button
+                    type="button"
+                    onClick={toggleMobileProductsMenu}
+                    className={`flex w-full items-center justify-between rounded px-3 py-2 font-semibold transition-colors ${
+                      isActive ? 'bg-[#EEF3FF] text-[#0037AD]' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Products
+                    <FiChevronDown className={`h-4 w-4 transition-transform ${isMobileProductsOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isMobileProductsOpen && (
+                    <div className="space-y-2 border-t border-[#E3E7EF] p-3">
+                      {isMenuLoading && <div className="h-12 animate-pulse rounded bg-[#EAF1FF]" />}
+                      {menuError && <p className="text-sm font-bold text-red-600">{menuError}</p>}
+                      {!isMenuLoading &&
+                        !menuError &&
+                        categories.map((category) => (
+                          <div key={category.id} className="rounded-lg bg-white">
+                            <button
+                              type="button"
+                              onClick={() => handleCategoryClick(category)}
+                              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left"
+                            >
+                              <span className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded bg-[#F3F7FF]">
+                                <Image
+                                  src={getCategoryImage(category)}
+                                  alt={category.name}
+                                  fill
+                                  sizes="48px"
+                                  className="object-contain p-1"
+                                />
+                              </span>
+                              <span className="min-w-0 flex-1 break-words font-semibold text-[#454444] [overflow-wrap:anywhere]">
+                                {category.name}
+                              </span>
+                              <span className="text-xl font-bold text-[#0037AD]">→</span>
+                            </button>
+                            {activeCategory?.id === category.id && (
+                              <div className="space-y-1 border-t border-[#E3E7EF] px-3 py-2">
+                                {visibleSubCategories.map((subCategory) => (
+                                  <button
+                                    key={subCategory.id}
+                                    type="button"
+                                    onClick={() => navigateToSubCategory(subCategory)}
+                                    className="block w-full rounded px-3 py-2 text-left text-sm font-semibold text-[#5A5A5A] hover:bg-[#EEF3FF] hover:text-[#0037AD]"
+                                  >
+                                    {subCategory.name}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <Link
@@ -144,6 +434,11 @@ export default function Header() {
           >
             <FiHeart className="w-5 h-5" />
             Wishlist
+            {wishlist.ids.length > 0 && (
+              <span className="ml-auto rounded-full bg-[#0037AD] px-2 py-0.5 text-xs font-bold text-white">
+                {wishlist.ids.length}
+              </span>
+            )}
           </Link>
         </div>
       )}

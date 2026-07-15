@@ -43,6 +43,19 @@ export function useSubCategories(token: string | null, params: SubCategoryListPa
   });
 }
 
+export function usePublicSubCategories(params: SubCategoryListParams) {
+  return useQuery({
+    queryKey: [...subCategoriesQueryKey, 'public', params],
+    queryFn: async (): Promise<SubCategoryListCache> => {
+      const response = await getSubCategories(null, params);
+      return {
+        subCategories: response.data,
+        pagination: response.pagination,
+      };
+    },
+  });
+}
+
 export function useCreateSubCategory(token: string | null) {
   const queryClient = useQueryClient();
 

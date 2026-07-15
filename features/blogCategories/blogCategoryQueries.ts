@@ -43,6 +43,19 @@ export function useBlogCategories(token: string | null, params: BlogCategoryList
   });
 }
 
+export function usePublicBlogCategories(params: BlogCategoryListParams) {
+  return useQuery({
+    queryKey: [...blogCategoriesQueryKey, 'public', params],
+    queryFn: async (): Promise<BlogCategoryListCache> => {
+      const response = await getBlogCategories(null, params);
+      return {
+        blogCategories: response.data,
+        pagination: response.pagination,
+      };
+    },
+  });
+}
+
 export function useCreateBlogCategory(token: string | null) {
   const queryClient = useQueryClient();
 

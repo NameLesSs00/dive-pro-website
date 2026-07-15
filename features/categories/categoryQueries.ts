@@ -37,6 +37,19 @@ export function useCategories(token: string | null, params: CategoryListParams) 
   });
 }
 
+export function usePublicCategories(params: CategoryListParams) {
+  return useQuery({
+    queryKey: [...categoriesQueryKey, 'public', params],
+    queryFn: async (): Promise<CategoryListCache> => {
+      const response = await getCategories(null, params);
+      return {
+        categories: response.data,
+        pagination: response.pagination,
+      };
+    },
+  });
+}
+
 export function useCreateCategory(token: string | null) {
   const queryClient = useQueryClient();
 

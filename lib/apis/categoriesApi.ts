@@ -23,14 +23,14 @@ function buildCategoryFormData(payload: CreateCategoryRequest | UpdateCategoryRe
   return formData;
 }
 
-export function getCategories(token: string, params?: CategoryListParams) {
+export function getCategories(token: string | null, params?: CategoryListParams) {
   return apiRequest<Category[]>(buildCategoryQuery(params), {
     token,
     action: 'categories.list',
   });
 }
 
-export function getCategoryById(id: number, token: string) {
+export function getCategoryById(id: number, token: string | null) {
   return apiRequest<Category>(`/categories/${id}`, {
     token,
     action: 'categories.details',

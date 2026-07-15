@@ -1,45 +1,12 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-
-// --- Data ---
-const categories = [
-  {
-    slug: 'regulators',
-    name: 'Regulators',
-    count: 15,
-    image: '/categories/dummy/1ba5f7c04f90e6dc8bca640f5d9edc45d7d0a801.jpg',
-  },
-  {
-    slug: 'bcds',
-    name: 'B.C.D.s',
-    count: 10,
-    image: '/categories/dummy/47bff598e4daefba915551cf7e61f9851be1d723.png',
-  },
-  {
-    slug: 'masks-snorkels',
-    name: 'Masks & Snorkels',
-    count: 10,
-    image: '/categories/dummy/c0be01179f2125de455b8d8b77ca579d8b567492.png',
-  },
-  {
-    slug: 'wetsuits',
-    name: 'Wetsuits',
-    count: 15,
-    image: '/categories/dummy/e647b72f6e734ad63a8a86884ca044180c4965cc.png',
-  },
-  {
-    slug: 'fins',
-    name: 'Fins',
-    count: 15,
-    image: '/categories/dummy/d65ad75af8f298fcaf546795cd58e7b70c15be84.png',
-  },
-  {
-    slug: 'bags-accessories',
-    name: 'Bags & Accessories',
-    count: 15,
-    image: '/categories/dummy/2f9fb533b5b75d5a9ab81611b2379efb9bf8b195.png',
-  },
-];
+import { motion } from 'framer-motion';
+import { FiArrowRight } from 'react-icons/fi';
+import ApiErrorMessage from '@/components/api/ApiErrorMessage';
+import { usePublicCategories } from '@/features/categories/categoryQueries';
+import { getApiAssetUrl } from '@/lib/config/api';
 
 const featureCards = [
   {
@@ -59,12 +26,14 @@ const featureCards = [
   },
 ];
 
-// --- Page ---
+const fallbackCategoryImage = '/products/Dumm/iamge1.png';
+
 export default function CategoriesPage() {
+  const categoriesQuery = usePublicCategories({ pageNumber: 1, pageSize: 100, search: '' });
+  const categories = categoriesQuery.data?.categories ?? [];
+
   return (
     <div className="bg-white">
-
-      {/* ── SECTION 1: Hero ── */}
       <section className="relative flex min-h-[300px] w-full items-center overflow-hidden md:min-h-[380px]">
         <Image
           src="/categories/CategoriesDesktop.png"
@@ -74,116 +43,142 @@ export default function CategoriesPage() {
           priority
           className="object-cover object-center"
         />
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black/30" />
-        {/* Text overlay */}
-        <div className="absolute inset-0 flex flex-col justify-center">
-          <div className="container mx-auto px-4">
-            {/* Breadcrumb */}
-            <nav className="flex items-center text-sm font-medium text-white mb-3 md:mb-5 opacity-90">
-              <Link href="/" className="hover:underline">Home</Link>
-              <span className="mx-2">&gt;</span>
-              <span>Categories</span>
-            </nav>
-            {/* Heading */}
-            <h1 className="mb-3 text-4xl font-extrabold leading-tight text-white md:mb-4 md:text-6xl">
-              Categories
-            </h1>
-            {/* Subtitle */}
-            <p className="max-w-2xl text-sm leading-7 text-white/90 md:text-lg">
-              Discover a wide range of professional diving gear designed for safety, comfort, and performance.
-            </p>
-          </div>
-        </div>
+        <div className="absolute inset-0 bg-[#00113A]/50" />
+        <motion.div
+          className="container relative z-10 mx-auto px-4 text-white"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <nav className="mb-3 flex items-center text-sm font-medium text-white/90 md:mb-5">
+            <Link href="/" className="hover:underline">
+              Home
+            </Link>
+            <span className="mx-2">&gt;</span>
+            <span>Categories</span>
+          </nav>
+          <h1 className="mb-3 text-4xl font-extrabold leading-tight md:mb-4 md:text-6xl">Categories</h1>
+          <p className="max-w-2xl text-sm leading-7 text-white/90 md:text-lg">
+            Discover professional diving gear categories designed for safety, comfort, and performance.
+          </p>
+        </motion.div>
       </section>
 
-      {/* ── SECTION 2: Body ── */}
       <section className="container mx-auto px-4 py-16">
+        <motion.div
+          className="mb-10 flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-[#0037AD]">Shop by need</p>
+            <h2 className="mt-2 text-3xl font-extrabold text-[#00113A] md:text-4xl">All Equipment Categories</h2>
+          </div>
+          <p className="text-sm font-semibold text-[#5E6675]">{categories.length} categories</p>
+        </motion.div>
 
-        {/* Category Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 mb-16">
-          {categories.map((cat) => (
-            <Link
-              key={cat.slug}
-              href={`/products?category=${cat.slug}`}
-              className="group bg-white rounded-3xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col"
-            >
-              {/* Product image */}
-              <div className="flex items-center justify-center h-64 lg:h-72 pt-6 pb-2 px-6">
-                <Image
-                  src={cat.image}
-                  alt={cat.name}
-                  width={320}
-                  height={260}
-                  className="h-full w-full object-contain"
-                />
-              </div>
-
-              {/* Card footer */}
-              <div className="flex items-center justify-between px-8 py-6 mt-auto border-t border-gray-50">
-                <div>
-                  <p className="font-bold text-xl lg:text-2xl" style={{ color: '#0037AD' }}>
-                    {cat.name}
-                  </p>
-                  <p className="text-base mt-1" style={{ color: '#6B7280' }}>
-                    {cat.count} Product
-                  </p>
+        {categoriesQuery.isLoading && (
+          <div className="mb-16 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div key={index} className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+                <div className="h-72 animate-pulse bg-[#EAF1FF]" />
+                <div className="space-y-3 p-8">
+                  <div className="h-7 animate-pulse rounded bg-[#EAF1FF]" />
+                  <div className="h-4 w-1/2 animate-pulse rounded bg-[#F2F6FF]" />
                 </div>
-                {/* Arrow button */}
-                <div
-                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200"
-                  style={{ backgroundColor: '#0037AD' }}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {categoriesQuery.isError && (
+          <div className="mb-16">
+            <ApiErrorMessage error={categoriesQuery.error} title="Could not load categories" />
+          </div>
+        )}
+
+        {!categoriesQuery.isLoading && !categoriesQuery.isError && categories.length > 0 && (
+          <div className="mb-16 grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+            {categories.map((category, index) => {
+              const imageSrc = getApiAssetUrl(category.imageUrl) || fallbackCategoryImage;
+
+              return (
+                <motion.div
+                  key={category.id}
+                  initial={{ opacity: 0, y: 26 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ delay: index * 0.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="white"
-                    className="w-5 h-5"
+                  <Link
+                    href={`/products?categoryId=${category.id}`}
+                    className="group flex h-full flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+                    <div className="flex h-64 items-center justify-center bg-[#F7FAFF] px-6 pb-2 pt-6 lg:h-72">
+                      <Image
+                        src={imageSrc}
+                        alt={category.name}
+                        width={320}
+                        height={260}
+                        className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-110"
+                      />
+                    </div>
 
-        {/* Feature Cards Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featureCards.map((card) => (
-            <div
+                    <div className="mt-auto flex items-center justify-between gap-4 border-t border-gray-50 px-8 py-6">
+                      <div className="min-w-0">
+                        <p className="break-words text-xl font-bold text-[#0037AD] [overflow-wrap:anywhere] lg:text-2xl">
+                          {category.name}
+                        </p>
+                        <p className="mt-1 text-base text-[#6B7280]">
+                          {category.productCount} {category.productCount === 1 ? 'Product' : 'Products'}
+                        </p>
+                      </div>
+                      <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#0037AD] text-white transition-transform duration-200 group-hover:translate-x-1 group-hover:scale-110">
+                        <FiArrowRight className="h-5 w-5" />
+                      </span>
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+
+        {!categoriesQuery.isLoading && !categoriesQuery.isError && categories.length === 0 && (
+          <div className="mb-16 rounded-3xl border border-[#E5ECF8] bg-[#F7FAFF] px-6 py-14 text-center">
+            <h2 className="text-2xl font-extrabold text-[#00113A]">No categories yet</h2>
+            <p className="mt-2 text-[#5E6675]">Equipment categories will appear here once they are published.</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {featureCards.map((card, index) => (
+            <motion.div
               key={card.title}
               className="flex items-center gap-5 rounded-[20px] px-8 py-8 shadow-sm"
               style={{ backgroundColor: '#B5CCFE80' }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.25 }}
+              transition={{ delay: index * 0.08, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
               <div
-                className="flex-shrink-0 w-14 h-14 relative flex items-center justify-center rounded-full"
+                className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full"
                 style={{ backgroundColor: '#0041C91A' }}
               >
-                <Image
-                  src={card.icon}
-                  alt={card.title}
-                  width={24}
-                  height={24}
-                  className="w-6 h-auto object-contain"
-                />
+                <Image src={card.icon} alt={card.title} width={24} height={24} className="h-auto w-6 object-contain" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-sm lg:text-base tracking-widest uppercase mb-1" style={{ color: '#00113A' }}>
+                <p className="mb-1 text-sm font-bold uppercase tracking-widest text-[#00113A] lg:text-base">
                   {card.title}
                 </p>
-                <p className="text-sm lg:text-base leading-relaxed" style={{ color: '#444650' }}>
-                  {card.subtitle}
-                </p>
+                <p className="text-sm leading-relaxed text-[#444650] lg:text-base">{card.subtitle}</p>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
-
       </section>
     </div>
   );

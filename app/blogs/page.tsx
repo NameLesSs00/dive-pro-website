@@ -1,183 +1,261 @@
+'use client';
+
 import Image from 'next/image';
-import Link from 'next/link';
-import { FiSearch } from 'react-icons/fi';
+import { FormEvent, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import { FiArrowRight, FiSearch } from 'react-icons/fi';
+import ApiErrorMessage from '@/components/api/ApiErrorMessage';
+import BlogCard from '@/components/blogs/BlogCard';
+import { usePublicBlogCategories } from '@/features/blogCategories/blogCategoryQueries';
+import { usePublicBlogs } from '@/features/blogs/blogQueries';
 
-// --- Blog Data ---
-const blogs = [
-  {
-    id: 1,
-    slug: 'how-to-choose-the-right-diving-regulator',
-    title: 'How to Choose the Right Diving Regulator',
-    excerpt:
-      'Learn the key factors to consider when selecting a regulator, from breathing performance and durability to diving conditions and experience level.',
-    image: '/categories/dummy/1ba5f7c04f90e6dc8bca640f5d9edc45d7d0a801.jpg',
-  },
-  {
-    id: 2,
-    slug: 'essential-diving-equipment-for-beginners',
-    title: 'Essential Diving Equipment for Beginners',
-    excerpt:
-      'Discover the must-have gear every new diver needs, including masks, fins, B.C.D.s, wetsuits, and safety accessories.',
-    image: '/categories/dummy/2f9fb533b5b75d5a9ab81611b2379efb9bf8b195.png',
-  },
-  {
-    id: 3,
-    slug: 'finding-the-perfect-wetsuit-fit',
-    title: 'Finding the Perfect Wetsuit Fit',
-    excerpt:
-      'A complete guide to choosing the correct wetsuit size, thickness, and material for maximum comfort and thermal protection underwater.',
-    image: '/categories/dummy/47bff598e4daefba915551cf7e61f9851be1d723.png',
-  },
-];
+const blogPageSize = 100;
+const initialVisibleCount = 9;
 
-const categories = [
-  { label: 'All Articles', active: true },
-  { label: 'Equipment Guides', active: false },
-  { label: 'Safety Protocols', active: false },
-  { label: 'Training Tips', active: false },
-  { label: 'Marine Life', active: false },
-];
-
-// --- Page ---
 export default function BlogsPage() {
-  return (
-    <div className="bg-white">
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
+  const [categorySearch, setCategorySearch] = useState('');
+  const [visibleCount, setVisibleCount] = useState(initialVisibleCount);
 
-      {/* ── SECTION 1: Hero ── */}
-      <section className="relative flex min-h-[300px] w-full items-center overflow-hidden md:min-h-[380px]">
+  const blogsQuery = usePublicBlogs({ pageNumber: 1, pageSize: blogPageSize, search });
+  const categoriesQuery = usePublicBlogCategories({ pageNumber: 1, pageSize: 100, search: '' });
+
+  const blogs = useMemo(() => blogsQuery.data?.blogs ?? [], [blogsQuery.data?.blogs]);
+  const categories = useMemo(
+    () => categoriesQuery.data?.blogCategories ?? [],
+    [categoriesQuery.data?.blogCategories]
+  );
+
+  const categoryNameById = useMemo(() => {
+    return new Map(categories.map((category) => [category.id, category.name]));
+  }, [categories]);
+
+  const filteredCategories = useMemo(() => {
+    const normalizedSearch = categorySearch.trim().toLowerCase();
+    if (!normalizedSearch) return categories;
+
+    return categories.filter((category) => category.name.toLowerCase().includes(normalizedSearch));
+  }, [categories, categorySearch]);
+
+  const filteredBlogs = useMemo(() => {
+    const categoryFiltered = activeCategoryId
+      ? blogs.filter((blog) => blog.categoryId === activeCategoryId)
+      : blogs;
+
+    return categoryFiltered.map((blog) => ({
+      ...blog,
+      categoryName: blog.categoryName || categoryNameById.get(blog.categoryId) || blog.categoryName,
+    }));
+  }, [activeCategoryId, blogs, categoryNameById]);
+
+  const visibleBlogs = filteredBlogs.slice(0, visibleCount);
+  const activeCategoryName = activeCategoryId
+    ? categoryNameById.get(activeCategoryId) || 'Selected category'
+    : 'All Articles';
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSearch(searchInput.trim());
+    setVisibleCount(initialVisibleCount);
+  };
+
+  const selectCategory = (categoryId: number | null) => {
+    setActiveCategoryId(categoryId);
+    setVisibleCount(initialVisibleCount);
+  };
+
+  return (
+    <div className="bg-white text-[#00113A]">
+      <section className="relative flex min-h-[340px] w-full items-center overflow-hidden md:min-h-[430px]">
         <Image
           src="/categories/CategoriesDesktop.png"
-          alt="Blogs Hero"
+          alt="Diving guides"
           fill
           sizes="100vw"
           priority
           className="object-cover object-center"
         />
-        {/* Dark overlay for text readability */}
-        <div className="absolute inset-0 bg-black/30" />
-        {/* Overlay text */}
-        <div className="absolute inset-0 flex flex-col justify-center">
-          <div className="container mx-auto px-4">
-            <h1 className="mb-4 text-4xl font-extrabold leading-tight text-white md:text-6xl">
-              Diving Guides &amp; Expert Tips
-            </h1>
-            <p className="max-w-2xl text-sm leading-7 text-white/90 md:text-lg">
-              Explore expert advice, equipment guides, safety recommendations, and practical tips
-              designed to help divers of all experience levels enjoy safer and more rewarding
-              underwater adventures.
-            </p>
-          </div>
-        </div>
+        <div className="absolute inset-0 bg-[#00113A]/55" />
+        <motion.div
+          className="container relative z-10 mx-auto px-4 py-16"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.26em] text-white/75">Dive Pro Journal</p>
+          <h1 className="max-w-3xl text-4xl font-extrabold leading-tight text-white md:text-6xl">
+            Diving Guides & Expert Tips
+          </h1>
+          <p className="mt-5 max-w-2xl text-base leading-7 text-white/88 md:text-lg">
+            Browse equipment advice, safety notes, and field-tested tips written for divers who want a better day underwater.
+          </p>
+        </motion.div>
       </section>
 
-      {/* ── SECTION 2: Body (Sidebar + Blog Grid) ── */}
-      <section className="container mx-auto px-4 py-14 md:py-20">
-        <div className="flex flex-col md:flex-row gap-10 md:gap-14 items-start">
-
-          {/* ── Sidebar ── */}
-          <aside className="w-full md:w-56 lg:w-64 flex-shrink-0">
-            <div className="border-l-4 border-[#0037AD] pl-4 mb-6">
-              <h2 className="text-xl font-bold" style={{ color: '#0037AD' }}>Categories</h2>
-            </div>
-            <nav className="flex flex-col gap-1">
-              {categories.map((cat) => (
-                <button
-                  key={cat.label}
-                  className={`text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-between ${
-                    cat.active
-                      ? 'bg-[#EEF3FF] text-[#0037AD]'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-[#0037AD]'
-                  }`}
-                >
-                  <span>{cat.label}</span>
-                  {cat.active && (
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </nav>
-
-            {/* Filter by name Search Box */}
-            <div className="mt-8 p-5 rounded-xl border border-gray-100 shadow-sm" style={{ backgroundColor: '#EEF3FF' }}>
-              <h3 className="text-sm font-bold mb-3" style={{ color: '#0037AD' }}>
-                Filter by name
-              </h3>
-              <div className="relative w-full">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="text-gray-400 w-4 h-4" />
+      <section className="bg-[#F8FAFE] py-10 md:py-16">
+        <div className="container mx-auto max-w-7xl px-4">
+          <motion.div
+            className="grid gap-8 lg:grid-cols-[300px_1fr]"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <aside className="lg:sticky lg:top-24 lg:self-start">
+              <div className="rounded-[24px] border border-[#D9E4F5] bg-white p-5 shadow-[0_18px_45px_rgba(0,17,58,0.07)] md:p-6">
+                <div className="mb-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#0037AD]">Browse by topic</p>
+                  <h2 className="mt-2 text-2xl font-extrabold text-[#00113A]">Categories</h2>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search Article"
-                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-transparent rounded-lg text-sm text-gray-800 focus:outline-none focus:border-[#0037AD] focus:ring-1 focus:ring-[#0037AD] shadow-sm"
-                />
+
+                <label className="relative mb-4 block">
+                  <FiSearch className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#0037AD]" />
+                  <input
+                    value={categorySearch}
+                    onChange={(event) => setCategorySearch(event.target.value)}
+                    className="h-11 w-full rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] pl-11 pr-4 text-sm text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
+                    placeholder="Search categories"
+                  />
+                </label>
+
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
+                  <button
+                    type="button"
+                    onClick={() => selectCategory(null)}
+                    className={`flex h-11 flex-shrink-0 items-center justify-between gap-4 rounded-lg px-4 text-left text-sm font-bold transition-colors lg:w-full ${
+                      activeCategoryId === null
+                        ? 'bg-[#0037AD] text-white shadow-[0_10px_24px_rgba(0,55,173,0.22)]'
+                        : 'bg-[#F7FAFF] text-[#405169] hover:bg-[#EAF1FF] hover:text-[#0037AD]'
+                    }`}
+                  >
+                    <span>All Articles</span>
+                    <span>{blogs.length}</span>
+                  </button>
+
+                  {categoriesQuery.isLoading && (
+                    <>
+                      <div className="h-11 flex-shrink-0 rounded-lg bg-[#F2F6FF] lg:w-full" />
+                      <div className="h-11 flex-shrink-0 rounded-lg bg-[#F2F6FF] lg:w-full" />
+                    </>
+                  )}
+
+                  {!categoriesQuery.isLoading &&
+                    filteredCategories.map((category) => {
+                      const count = blogs.filter((blog) => blog.categoryId === category.id).length;
+                      const isActive = activeCategoryId === category.id;
+
+                      return (
+                        <button
+                          key={category.id}
+                          type="button"
+                          onClick={() => selectCategory(category.id)}
+                          className={`flex h-11 flex-shrink-0 items-center justify-between gap-4 rounded-lg px-4 text-left text-sm font-bold transition-colors lg:w-full ${
+                            isActive
+                              ? 'bg-[#0037AD] text-white shadow-[0_10px_24px_rgba(0,55,173,0.22)]'
+                              : 'bg-[#F7FAFF] text-[#405169] hover:bg-[#EAF1FF] hover:text-[#0037AD]'
+                          }`}
+                        >
+                          <span>{category.name}</span>
+                          <span>{count}</span>
+                        </button>
+                      );
+                    })}
+                </div>
+
+                {categoriesQuery.isError && (
+                  <div className="mt-4">
+                    <ApiErrorMessage error={categoriesQuery.error} title="Could not load blog categories" />
+                  </div>
+                )}
               </div>
-            </div>
-          </aside>
+            </aside>
 
-          {/* ── Blog Cards Grid ── */}
-          <div className="flex-1 min-w-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-              {blogs.map((blog) => (
-                <Link
-                  key={blog.id}
-                  href={`/blogs/${blog.slug}`}
-                  className="group bg-white rounded-2xl border border-gray-100 shadow-[0_4px_24px_rgba(0,0,0,0.06)] hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col"
-                >
-                  {/* Card Image */}
-                  <div className="relative w-full h-52 overflow-hidden">
-                    <Image
-                      src={blog.image}
-                      alt={blog.title}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="p-6 flex flex-col flex-1">
-                    <h3 className="text-lg font-bold mb-2 leading-snug group-hover:opacity-80 transition-opacity" style={{ color: '#0037AD' }}>
-                      {blog.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed flex-1 mb-5">
-                      {blog.excerpt}
-                    </p>
-                    {/* Read More Button */}
-                    <div>
-                      <span
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-opacity group-hover:opacity-90"
-                        style={{ backgroundColor: '#0037AD' }}
-                      >
-                        Read more
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                          <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
-                        </svg>
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* See More Button */}
-            <div className="flex justify-center">
-              <button
-                className="flex items-center gap-3 px-16 py-4 rounded-full border-2 border-[#0037AD] text-[#0037AD] text-base font-semibold transition-all duration-200 hover:bg-[#0037AD] hover:text-white"
+            <div className="min-w-0">
+              <form
+                onSubmit={handleSearchSubmit}
+                className="mb-7 flex flex-col gap-3 rounded-[24px] border border-[#D9E4F5] bg-white p-3 shadow-[0_18px_45px_rgba(0,17,58,0.06)] sm:flex-row"
               >
-                See More
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-                  <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
+                <label className="relative block flex-1">
+                  <FiSearch className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#0037AD]" />
+                  <input
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    className="h-13 w-full rounded-lg border border-transparent bg-[#F7FAFF] py-4 pl-12 pr-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
+                    placeholder="Search articles by title or description"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="inline-flex h-13 items-center justify-center gap-2 rounded-lg bg-[#0037AD] px-7 py-4 font-extrabold text-white transition-colors hover:bg-[#00267A]"
+                >
+                  Search
+                  <FiArrowRight className="h-4 w-4" />
+                </button>
+              </form>
 
+              <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-[0.18em] text-[#0037AD]">{activeCategoryName}</p>
+                  <h2 className="mt-1 text-2xl font-extrabold text-[#00113A] md:text-3xl">
+                    {filteredBlogs.length} {filteredBlogs.length === 1 ? 'article' : 'articles'}
+                  </h2>
+                </div>
+                {search && <p className="text-sm font-semibold text-[#5E6675]">Search: &quot;{search}&quot;</p>}
+              </div>
+
+              {blogsQuery.isLoading && (
+                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  {Array.from({ length: 6 }, (_, index) => (
+                    <div key={index} className="overflow-hidden rounded-[28px] border border-[#E5ECF8] bg-white">
+                      <div className="h-64 animate-pulse bg-[#EAF1FF]" />
+                      <div className="space-y-4 p-6">
+                        <div className="h-6 animate-pulse rounded bg-[#EAF1FF]" />
+                        <div className="h-4 animate-pulse rounded bg-[#F2F6FF]" />
+                        <div className="h-4 w-2/3 animate-pulse rounded bg-[#F2F6FF]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {blogsQuery.isError && <ApiErrorMessage error={blogsQuery.error} title="Could not load blogs" />}
+
+              {!blogsQuery.isLoading && !blogsQuery.isError && visibleBlogs.length > 0 && (
+                <>
+                  <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                    {visibleBlogs.map((blog, index) => (
+                      <BlogCard key={blog.id} blog={blog} index={index} />
+                    ))}
+                  </div>
+
+                  {visibleCount < filteredBlogs.length && (
+                    <div className="mt-10 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setVisibleCount((current) => current + initialVisibleCount)}
+                        className="inline-flex h-12 items-center justify-center gap-2 rounded-full border-2 border-[#0037AD] bg-white px-8 font-bold text-[#0037AD] transition-colors hover:bg-[#0037AD] hover:text-white"
+                      >
+                        See More
+                        <FiArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!blogsQuery.isLoading && !blogsQuery.isError && visibleBlogs.length === 0 && (
+                <div className="rounded-[28px] border border-[#D9E4F5] bg-white px-6 py-16 text-center shadow-[0_18px_45px_rgba(0,17,58,0.06)]">
+                  <h3 className="text-2xl font-extrabold text-[#00113A]">No articles found</h3>
+                  <p className="mx-auto mt-3 max-w-md text-[#5E6675]">
+                    Try a different search term or choose another blog category.
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
         </div>
       </section>
-
     </div>
   );
 }

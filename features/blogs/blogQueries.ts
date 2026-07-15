@@ -5,6 +5,7 @@ import {
   createBlog,
   createBlogSections,
   deleteBlog,
+  getBlogById,
   getBlogs,
   updateBlog,
   updateBlogSections,
@@ -71,6 +72,31 @@ export function useBlogs(token: string | null, params: BlogListParams) {
       };
     },
     enabled: Boolean(token),
+  });
+}
+
+export function usePublicBlogs(params: BlogListParams) {
+  return useQuery({
+    queryKey: [...blogsQueryKey, 'public', params],
+    queryFn: async (): Promise<BlogListCache> => {
+      const response = await getBlogs(null, params);
+      return {
+        blogs: response.data,
+        pagination: response.pagination,
+      };
+    },
+  });
+}
+
+export function usePublicBlog(id: number | null) {
+  return useQuery({
+    queryKey: [...blogsQueryKey, 'public', 'details', id],
+    queryFn: async (): Promise<Blog> => {
+      if (!id) throw new Error('Blog not found.');
+      const response = await getBlogById(id, null);
+      return response.data;
+    },
+    enabled: Boolean(id),
   });
 }
 
