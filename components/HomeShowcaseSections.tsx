@@ -63,6 +63,7 @@ export default function HomeShowcaseSections() {
   const productsQuery = usePublicProducts({ pageNumber: 1, pageSize: 12, search: '' });
   const wishlist = useWishlistIds();
   const categories = categoriesQuery.data?.categories ?? [];
+  const featuredCategories = categories.slice(0, 3);
   const liveProducts = productsQuery.data?.products ?? [];
   const products = (liveProducts.filter((product) => product.isFeatured).length
     ? liveProducts.filter((product) => product.isFeatured)
@@ -77,7 +78,7 @@ export default function HomeShowcaseSections() {
 
           {categoriesQuery.isLoading && (
             <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-5 md:mx-0 md:grid md:grid-cols-2 md:gap-7 md:overflow-visible md:px-0 lg:grid-cols-3">
-              {Array.from({ length: 6 }, (_, index) => (
+              {Array.from({ length: 3 }, (_, index) => (
                 <div key={index} className="min-w-[88%] overflow-hidden rounded-[28px] border border-white/70 bg-white md:min-w-0">
                   <div className="h-72 animate-pulse bg-[#EAF1FF] md:h-64" />
                   <div className="space-y-3 p-6">
@@ -95,9 +96,9 @@ export default function HomeShowcaseSections() {
             </div>
           )}
 
-          {!categoriesQuery.isLoading && !categoriesQuery.isError && categories.length > 0 && (
+          {!categoriesQuery.isLoading && !categoriesQuery.isError && featuredCategories.length > 0 && (
             <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-5 md:mx-0 md:grid md:grid-cols-2 md:gap-7 md:overflow-visible md:px-0 lg:grid-cols-3">
-              {categories.map((category, index) => {
+              {featuredCategories.map((category, index) => {
                 const imageSrc = getApiAssetUrl(category.imageUrl) || fallbackCategoryImage;
 
                 return (

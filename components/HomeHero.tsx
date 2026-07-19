@@ -1,28 +1,72 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { FaArrowRight } from 'react-icons/fa';
+import { AnimatePresence, motion } from 'framer-motion';
+import { FaArrowRight, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+
+const heroSlides = [
+  {
+    src: '/Home/heroImage.jpg',
+    alt: 'Diver underwater',
+    objectPosition: 'object-[62%_center] md:object-[72%_center]',
+    imageTransform: '',
+  },
+  {
+    src: '/Home/hero2.webp',
+    alt: 'Dive Pro diver exploring blue water',
+    objectPosition: 'object-[58%_28%] md:object-[58%_24%]',
+    imageTransform: 'scale-[1.28] translate-x-[14%] translate-y-[4%] md:scale-[1.36] md:translate-x-[18%] md:translate-y-[5%]',
+  },
+  {
+    src: '/Home/hero1.webp',
+    alt: 'Diving gear in open water',
+    objectPosition: 'object-[62%_18%] md:object-[62%_16%]',
+    imageTransform: 'scale-[1.28] translate-x-[14%] md:scale-[1.36] md:translate-x-[18%]',
+  },
+];
 
 export default function HomeHero() {
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const sliderTimer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % heroSlides.length);
+    }, 5200);
+
+    return () => window.clearInterval(sliderTimer);
+  }, []);
+
+  const goToPreviousSlide = () => {
+    setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  const goToNextSlide = () => {
+    setActiveSlide((current) => (current + 1) % heroSlides.length);
+  };
+
   return (
     <section className="relative flex min-h-[500px] w-full items-center overflow-hidden bg-[#00113A] md:min-h-[620px]">
-      <motion.div
-        className="absolute inset-0"
-        initial={{ scale: 1.06 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <Image
-          src="/Home/heroImage.jpg"
-          alt="Diver underwater"
-          fill
-          sizes="100vw"
-          priority
-          className="object-cover object-[62%_center] md:object-[72%_center]"
-        />
-      </motion.div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={heroSlides[activeSlide].src}
+          className="absolute inset-0"
+          initial={{ opacity: 0, scale: 1.06 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.02 }}
+          transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <Image
+            src={heroSlides[activeSlide].src}
+            alt={heroSlides[activeSlide].alt}
+            fill
+            sizes="100vw"
+            priority={activeSlide === 0}
+            className={`object-cover ${heroSlides[activeSlide].objectPosition} ${heroSlides[activeSlide].imageTransform}`}
+          />
+        </motion.div>
+      </AnimatePresence>
       <div className="absolute inset-0 bg-gradient-to-r from-[#00113A]/86 via-[#00113A]/50 to-[#00113A]/8 md:from-[#00113A]/94 md:via-[#00113A]/68 md:to-[#00113A]/18" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#00113A]/24 via-transparent to-transparent" />
 
@@ -72,6 +116,44 @@ export default function HomeHero() {
               Explore products
               <FaArrowRight className="h-3.5 w-3.5" />
             </Link>
+          </motion.div>
+
+          <motion.div
+            className="mt-8 flex items-center gap-3"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.48, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <button
+              type="button"
+              onClick={goToPreviousSlide}
+              aria-label="Show previous hero image"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/28 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+            >
+              <FaChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <div className="flex items-center gap-2">
+              {heroSlides.map((slide, index) => (
+                <button
+                  key={slide.src}
+                  type="button"
+                  onClick={() => setActiveSlide(index)}
+                  aria-label={`Show hero image ${index + 1}`}
+                  aria-current={activeSlide === index}
+                  className={`h-2.5 rounded-full transition-all ${
+                    activeSlide === index ? 'w-8 bg-white' : 'w-2.5 bg-white/45 hover:bg-white/75'
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={goToNextSlide}
+              aria-label="Show next hero image"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/28 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+            >
+              <FaChevronRight className="h-3.5 w-3.5" />
+            </button>
           </motion.div>
         </motion.div>
       </div>

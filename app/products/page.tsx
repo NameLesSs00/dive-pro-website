@@ -12,9 +12,11 @@ import { usePublicCategories } from "@/features/categories/categoryQueries";
 import { usePublicProducts } from "@/features/products/productQueries";
 import { usePublicSubCategories } from "@/features/subCategories/subCategoryQueries";
 import { Category } from "@/lib/models/category";
+import type { ProductType } from "@/lib/models/product";
 import { SubCategory } from "@/lib/models/subCategory";
 
 const productPageSize = 9;
+const wetSuitTypeOptions: ProductType[] = ["Shorty", "Full"];
 
 function toNumberParam(value: string | null) {
   const numericValue = Number(value);
@@ -26,6 +28,11 @@ function getSubCategoriesForCategory(subCategories: SubCategory[], categoryId: n
   return subCategories.filter((subCategory) => subCategory.categoryId === categoryId);
 }
 
+function isWetSuitsCategoryName(name: string) {
+  const normalizedName = name.replace(/[\s-]+/g, "").toLowerCase();
+  return normalizedName === "wetsuit" || normalizedName === "wetsuits";
+}
+
 function ListSkeleton() {
   return (
     <div className="space-y-2">
@@ -33,6 +40,38 @@ function ListSkeleton() {
         <div key={item} className="h-5 animate-pulse rounded bg-[#F2F6FF]" />
       ))}
     </div>
+  );
+}
+
+type WetSuitTypeFilterProps = {
+  selectedType: ProductType | null;
+  onTypeChange: (type: ProductType | null) => void;
+  titleClassName: string;
+  labelClassName: string;
+};
+
+function WetSuitTypeFilter({ selectedType, onTypeChange, titleClassName, labelClassName }: WetSuitTypeFilterProps) {
+  return (
+    <>
+      <h3 className={titleClassName}>Wet Suit Type</h3>
+      <div className="space-y-3">
+        {wetSuitTypeOptions.map((type) => {
+          const isActive = selectedType === type;
+
+          return (
+            <label key={type} className={labelClassName}>
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={() => onTypeChange(isActive ? null : type)}
+                className="h-4 w-4 rounded border-[#C8D3E4] accent-[#0037AD]"
+              />
+              <span>{type}</span>
+            </label>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -60,19 +99,12 @@ function ProductsPageContent() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
+  const [selectedProductType, setSelectedProductType] = useState<ProductType | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
   const categoriesQuery = usePublicCategories({ pageNumber: 1, pageSize: 100, search: "" });
   const subCategoriesQuery = usePublicSubCategories({ pageNumber: 1, pageSize: 200, search: "" });
-  const productsQuery = usePublicProducts({
-    pageNumber,
-    pageSize: productPageSize,
-    categoryId: selectedCategoryId,
-    subCategoryId: selectedSubCategoryId,
-    search,
-  });
-
   const categories = useMemo(() => categoriesQuery.data?.categories ?? [], [categoriesQuery.data?.categories]);
   const subCategories = useMemo(
     () => subCategoriesQuery.data?.subCategories ?? [],
@@ -82,30 +114,58 @@ function ProductsPageContent() {
   const selectedSubCategory = subCategories.find((subCategory) => subCategory.id === selectedSubCategoryId) ?? null;
   const effectiveCategoryId = selectedCategoryId ?? selectedSubCategory?.categoryId ?? null;
   const selectedCategory = categories.find((category) => category.id === effectiveCategoryId) ?? null;
+  const isWetSuitsCategorySelected = Boolean(
+    (selectedCategory && isWetSuitsCategoryName(selectedCategory.name)) ||
+      (selectedSubCategory && isWetSuitsCategoryName(selectedSubCategory.name))
+  );
+  const canUseWetSuitTypeFilter = isWetSuitsCategorySelected;
+  const effectiveProductType = canUseWetSuitTypeFilter ? selectedProductType : null;
   const activeSubCategories = getSubCategoriesForCategory(subCategories, effectiveCategoryId);
-  const currentFilterLabel = selectedSubCategory?.name || selectedCategory?.name || "All products";
+  const currentBaseFilterLabel = selectedSubCategory?.name || selectedCategory?.name || "All products";
+  const currentFilterLabel = effectiveProductType ? `${currentBaseFilterLabel} / ${effectiveProductType}` : currentBaseFilterLabel;
+  const productsQuery = usePublicProducts({
+    pageNumber,
+    pageSize: productPageSize,
+    categoryId: selectedCategoryId,
+    subCategoryId: selectedSubCategoryId,
+    type: effectiveProductType,
+    search,
+  });
   const products = productsQuery.data?.products ?? [];
   const pagination = productsQuery.data?.pagination;
   const totalCount = Number(pagination?.totalCount ?? products.length);
   const totalPages = Math.max(1, Math.ceil(totalCount / productPageSize));
   const allCategoryCount = categories.reduce((sum, category) => sum + Number(category.productCount || 0), 0);
-  const activeFilterCount = [effectiveCategoryId, selectedSubCategoryId, search].filter(Boolean).length;
+  const activeFilterCount = [effectiveCategoryId, selectedSubCategoryId, effectiveProductType, search].filter(Boolean).length;
 
   const handleCategoryClick = (category: Category) => {
     setSelectedCategoryId(category.id);
     setSelectedSubCategoryId(null);
+    if (!isWetSuitsCategoryName(category.name)) {
+      setSelectedProductType(null);
+    }
     setPageNumber(1);
   };
 
   const handleAllCategoriesClick = () => {
     setSelectedCategoryId(null);
     setSelectedSubCategoryId(null);
+    setSelectedProductType(null);
     setPageNumber(1);
   };
 
   const handleSubCategoryClick = (subCategory: SubCategory) => {
     setSelectedCategoryId(subCategory.categoryId);
     setSelectedSubCategoryId((current) => (current === subCategory.id ? null : subCategory.id));
+    const parentCategory = categories.find((category) => category.id === subCategory.categoryId);
+    if (!isWetSuitsCategoryName(subCategory.name) && parentCategory && !isWetSuitsCategoryName(parentCategory.name)) {
+      setSelectedProductType(null);
+    }
+    setPageNumber(1);
+  };
+
+  const handleProductTypeChange = (type: ProductType | null) => {
+    setSelectedProductType(type);
     setPageNumber(1);
   };
 
@@ -118,6 +178,7 @@ function ProductsPageContent() {
   const clearFilters = () => {
     setSelectedCategoryId(null);
     setSelectedSubCategoryId(null);
+    setSelectedProductType(null);
     setSearchInput("");
     setSearch("");
     setPageNumber(1);
@@ -253,6 +314,17 @@ function ProductsPageContent() {
                   )}
                 </div>
               )}
+
+              {canUseWetSuitTypeFilter && (
+                <div className="border-t border-[#D9E4F5] pt-7">
+                  <WetSuitTypeFilter
+                    selectedType={selectedProductType}
+                    onTypeChange={handleProductTypeChange}
+                    titleClassName="mb-4 text-xl font-extrabold text-[#0037AD]"
+                    labelClassName="flex cursor-pointer items-center gap-3 text-sm font-semibold text-[#5E6675] transition-colors hover:text-[#0037AD]"
+                  />
+                </div>
+              )}
             </div>
           </aside>
 
@@ -356,7 +428,18 @@ function ProductsPageContent() {
                           );
                         })}
                       </div>
-                    )}
+                  )}
+                </div>
+              )}
+
+                {canUseWetSuitTypeFilter && (
+                  <div className="border-t border-[#D9E4F5] pt-6">
+                    <WetSuitTypeFilter
+                      selectedType={selectedProductType}
+                      onTypeChange={handleProductTypeChange}
+                      titleClassName="mb-4 text-lg font-extrabold text-[#0037AD]"
+                      labelClassName="flex cursor-pointer items-center gap-3 text-sm font-semibold text-[#5E6675]"
+                    />
                   </div>
                 )}
               </motion.div>
