@@ -10,13 +10,13 @@ export default function PublicMotionShell({ children }: { children: ReactNode })
   const isAdmin = pathname?.startsWith('/admin');
 
   if (isAdmin || prefersReducedMotion) {
-    return <main className="flex-1">{children}</main>;
+    return <main className="flex-1 bg-white">{children}</main>;
   }
 
   return (
     <motion.main
       key={pathname}
-      className="flex-1"
+      className="flex-1 bg-white"
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}

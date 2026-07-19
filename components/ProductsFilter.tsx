@@ -29,11 +29,11 @@ export default function ProductsFilter() {
             <span className="bg-[#0037AD] text-white text-xs py-0.5 px-2 rounded-md">48</span>
           </li>
           <li className="flex items-center justify-between text-gray-500 hover:text-[#0037AD] cursor-pointer transition-colors">
-            <span>Men's Full Suits</span>
+            <span>Men&apos;s Full Suits</span>
             <span className="bg-gray-100 text-gray-500 text-xs py-0.5 px-2 rounded-md">12</span>
           </li>
           <li className="flex items-center justify-between text-gray-500 hover:text-[#0037AD] cursor-pointer transition-colors">
-            <span>Women's Full Suits</span>
+            <span>Women&apos;s Full Suits</span>
             <span className="bg-gray-100 text-gray-500 text-xs py-0.5 px-2 rounded-md">14</span>
           </li>
           <li className="flex items-center justify-between text-gray-500 hover:text-[#0037AD] cursor-pointer transition-colors">

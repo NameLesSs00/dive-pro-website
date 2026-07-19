@@ -76,7 +76,7 @@ export default function HomeHero() {
         </motion.div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-[-2px] left-0 right-0 z-10 h-24 md:h-36" aria-hidden="true">
+      <div className="pointer-events-none absolute bottom-[-6px] left-0 right-0 z-10 h-24 md:h-36" aria-hidden="true">
         <Image
           src="/Group 1.png"
           alt=""
@@ -84,6 +84,7 @@ export default function HomeHero() {
           sizes="100vw"
           className="object-fill"
         />
+        <div className="absolute inset-x-0 bottom-[-8px] h-5 bg-[#F8FAFF]" />
       </div>
     </section>
   );

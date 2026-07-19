@@ -116,12 +116,12 @@ export default function CategoriesPage() {
                     href={`/products?categoryId=${category.id}`}
                     className="group flex h-full flex-col overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                   >
-                    <div className="flex h-64 items-center justify-center bg-[#F7FAFF] px-6 pb-2 pt-6 lg:h-72">
+                    <div className="relative h-64 overflow-hidden bg-[#F7FAFF] lg:h-72">
                       <Image
                         src={imageSrc}
                         alt={category.name}
-                        width={320}
-                        height={260}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                         className="h-full w-full object-contain transition-transform duration-700 group-hover:scale-110"
                       />
                     </div>

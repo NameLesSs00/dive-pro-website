@@ -28,7 +28,7 @@ export default function ProductCard({ id, title, subtitle, imageSrc, product }: 
   const productHref = product ? getProductPath(product) : `/products/${productId}`;
 
   return (
-    <div className="bg-white rounded-[24px] p-6 flex flex-col h-full hover:shadow-2xl transition-all duration-300 group relative">
+    <div className="bg-white rounded-[24px] flex flex-col h-full overflow-hidden hover:shadow-2xl transition-all duration-300 group relative">
       
       {/* Heart Icon */}
       <button
@@ -45,19 +45,19 @@ export default function ProductCard({ id, title, subtitle, imageSrc, product }: 
       </button>
 
       {/* Product Image */}
-      <Link href={productHref} className="relative w-full h-60 sm:h-72 md:h-80 mb-4 sm:mb-6 cursor-pointer block">
+      <Link href={productHref} className="relative mb-4 block h-60 w-full cursor-pointer bg-[#F8FAFF] sm:mb-6 sm:h-72 md:h-80">
         <Image
           src={productImageSrc}
           alt={productTitle}
           fill
           draggable={false}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-contain group-hover:scale-105 transition-transform duration-500"
+          className="object-contain transition-transform duration-500 group-hover:scale-105"
         />
       </Link>
 
       {/* Content */}
-      <div className="flex flex-row items-end justify-between mt-auto w-full">
+      <div className="flex flex-row items-end justify-between mt-auto w-full p-6 pt-0">
         <div className="min-w-0">
           <h3 className="break-words text-[#0037AD] font-bold text-lg sm:text-xl mb-1 leading-tight [overflow-wrap:anywhere]">
             {productTitle}

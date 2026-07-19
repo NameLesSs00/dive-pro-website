@@ -71,7 +71,7 @@ export default function HomeShowcaseSections() {
 
   return (
     <>
-      <section className="bg-[#c4d6fd] py-12 md:py-24">
+      <section className="relative z-20 -mt-px bg-[rgba(248,250,255,1)] py-12 md:py-24">
         <div className="container mx-auto max-w-7xl px-4">
           <SectionHeading eyebrow="Shop by need" title="Equipment Categories" />
 
@@ -79,7 +79,7 @@ export default function HomeShowcaseSections() {
             <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-5 md:mx-0 md:grid md:grid-cols-2 md:gap-7 md:overflow-visible md:px-0 lg:grid-cols-3">
               {Array.from({ length: 6 }, (_, index) => (
                 <div key={index} className="min-w-[88%] overflow-hidden rounded-[28px] border border-white/70 bg-white md:min-w-0">
-                  <div className="mx-4 mt-4 h-72 animate-pulse rounded-3xl bg-[#EAF1FF] md:h-64" />
+                  <div className="h-72 animate-pulse bg-[#EAF1FF] md:h-64" />
                   <div className="space-y-3 p-6">
                     <div className="h-7 animate-pulse rounded bg-[#EAF1FF]" />
                     <div className="h-4 w-1/2 animate-pulse rounded bg-[#F2F6FF]" />
@@ -113,13 +113,13 @@ export default function HomeShowcaseSections() {
                       href={`/products?categoryId=${category.id}`}
                       className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white shadow-[0_18px_45px_rgba(0,17,58,0.10)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(0,17,58,0.16)]"
                     >
-                      <div className="relative mx-4 mt-4 flex h-72 items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-[#F8FBFF] to-[#EAF1FF] p-6 md:h-64">
+                      <div className="relative flex h-72 items-center justify-center overflow-hidden bg-[#F8FAFF] md:h-64">
                         <Image
                           src={imageSrc}
                           alt={category.name}
                           fill
                           sizes="(max-width: 768px) 88vw, 33vw"
-                          className="object-contain p-6 transition-transform duration-700 group-hover:scale-110"
+                          className="object-contain transition-transform duration-700 group-hover:scale-110"
                         />
                       </div>
                       <div className="flex items-end justify-between gap-4 p-5 md:p-6">
@@ -163,7 +163,7 @@ export default function HomeShowcaseSections() {
         </div>
       </section>
 
-      <section className="overflow-hidden bg-[#00113A] py-12 md:py-24">
+      <section className="overflow-hidden bg-[rgba(0,36,122,1)] py-12 md:py-24">
         <div className="container mx-auto max-w-7xl px-4">
           <SectionHeading eyebrow="Popular picks" title="Best Selling Products" dark />
 
@@ -189,13 +189,13 @@ export default function HomeShowcaseSections() {
               {products.map((product, index) => (
               <motion.article
                 key={product.id}
-                className="group min-w-[86%] snap-center overflow-hidden rounded-[30px] border border-white/12 bg-white p-4 shadow-[0_22px_65px_rgba(0,0,0,0.28)] md:min-w-0"
+                className="group min-w-[86%] snap-center overflow-hidden rounded-[30px] border border-white/12 bg-white shadow-[0_22px_65px_rgba(0,0,0,0.28)] md:min-w-0"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ delay: index * 0.08, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="relative flex h-72 items-center justify-center overflow-hidden rounded-[24px] bg-gradient-to-br from-[#F7FAFF] to-[#EAF1FF] p-8">
+                <div className="relative flex h-72 items-center justify-center overflow-hidden bg-[#F8FAFF]">
                   <button
                     type="button"
                     onClick={() => wishlist.toggle(product.id)}
@@ -210,10 +210,10 @@ export default function HomeShowcaseSections() {
                     alt={product.name}
                     fill
                     sizes="(max-width: 768px) 86vw, 33vw"
-                    className="object-contain p-8 transition-transform duration-700 group-hover:scale-110"
+                    className="object-contain transition-transform duration-700 group-hover:scale-110"
                   />
                 </div>
-                <div className="flex items-end justify-between gap-4 px-2 pb-2 pt-5">
+                <div className="flex items-end justify-between gap-4 p-6 pt-5">
                   <div>
                     <p className="text-sm font-bold text-[#6B7280]">{getProductSubtitle(product)}</p>
                     <h3 className="mt-1 break-words text-2xl font-extrabold text-[#0037AD] [overflow-wrap:anywhere]">{product.name}</h3>
