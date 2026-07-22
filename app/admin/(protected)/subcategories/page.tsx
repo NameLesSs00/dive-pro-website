@@ -18,6 +18,7 @@ const pageSize = 10;
 
 const initialForm = {
   name: '',
+  order: '0',
   categoryId: '',
 };
 
@@ -64,6 +65,7 @@ export default function AdminSubCategoriesPage() {
     setSelectedSubCategory(null);
     setForm({
       name: '',
+      order: '0',
       categoryId: categories[0]?.id ? String(categories[0].id) : '',
     });
     setStatusMessage('');
@@ -75,7 +77,7 @@ export default function AdminSubCategoriesPage() {
   const openEditModal = (subCategory: SubCategory) => {
     setModalMode('edit');
     setSelectedSubCategory(subCategory);
-    setForm({ name: subCategory.name, categoryId: String(subCategory.categoryId) });
+    setForm({ name: subCategory.name, order: String(subCategory.order ?? 0), categoryId: String(subCategory.categoryId) });
     setStatusMessage('');
     createMutation.reset();
     updateMutation.reset();
@@ -100,12 +102,14 @@ export default function AdminSubCategoriesPage() {
     event.preventDefault();
 
     const categoryId = Number(form.categoryId);
-    if (!categoryId) return;
+    const order = Number(form.order);
+    if (!categoryId || !Number.isFinite(order)) return;
 
     if (modalMode === 'create') {
       createMutation.mutate(
         {
           name: form.name,
+          order,
           categoryId,
         },
         {
@@ -128,6 +132,7 @@ export default function AdminSubCategoriesPage() {
         id: selectedSubCategory.id,
         payload: {
           name: form.name,
+          order,
           categoryId,
         },
       },
@@ -240,11 +245,12 @@ export default function AdminSubCategoriesPage() {
         ) : subCategories.length ? (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] border-separate border-spacing-y-3 text-left">
+              <table className="w-full min-w-[860px] border-separate border-spacing-y-3 text-left">
                 <thead>
                   <tr className="text-sm text-[#5E6675]">
                     <th className="rounded-l-lg bg-[#F7FAFF] px-4 py-3 font-bold">Subcategory</th>
                     <th className="bg-[#F7FAFF] px-4 py-3 font-bold">Parent category</th>
+                    <th className="w-[120px] bg-[#F7FAFF] px-4 py-3 text-center font-bold">Order</th>
                     <th className="w-[160px] rounded-r-lg bg-[#F7FAFF] px-4 py-3 text-right font-bold">Actions</th>
                   </tr>
                 </thead>
@@ -260,6 +266,11 @@ export default function AdminSubCategoriesPage() {
                         <td className="border-y border-[#E5ECF8] bg-white px-4 py-4 transition-colors group-hover:bg-[#FBFCFF]">
                           <span className="inline-flex rounded-lg bg-[#EAF1FF] px-3 py-2 text-sm font-bold text-[#0037AD]">
                             {categoryName || `Category #${subCategory.categoryId}`}
+                          </span>
+                        </td>
+                        <td className="border-y border-[#E5ECF8] bg-white px-4 py-4 text-center transition-colors group-hover:bg-[#FBFCFF]">
+                          <span className="inline-flex min-w-12 justify-center rounded-lg bg-[#F7FAFF] px-3 py-2 text-sm font-bold text-[#384152]">
+                            {subCategory.order ?? 0}
                           </span>
                         </td>
                         <td className="rounded-r-lg border-y border-r border-[#E5ECF8] bg-white px-4 py-4 text-right transition-colors group-hover:bg-[#FBFCFF]">
@@ -385,6 +396,20 @@ export default function AdminSubCategoriesPage() {
                   required
                   className="h-12 w-full rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] px-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
                   placeholder="Subcategory name"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-[#00113A]">Order</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.order}
+                  onChange={(event) => setForm((current) => ({ ...current, order: event.target.value }))}
+                  required
+                  className="h-12 w-full rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] px-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
+                  placeholder="0"
                 />
               </label>
 

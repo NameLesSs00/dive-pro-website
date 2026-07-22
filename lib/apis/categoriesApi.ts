@@ -15,6 +15,7 @@ function buildCategoryQuery(params: CategoryListParams = {}) {
 function buildCategoryFormData(payload: CreateCategoryRequest | UpdateCategoryRequest) {
   const formData = new FormData();
   formData.append('Name', payload.name);
+  formData.append('Order', payload.order);
 
   if ('image' in payload && payload.image) {
     formData.append('ImageUrl', payload.image);

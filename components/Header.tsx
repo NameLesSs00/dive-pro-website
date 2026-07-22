@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { FiChevronDown, FiHeart, FiMenu, FiSearch, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiChevronRight, FiHeart, FiMenu, FiSearch, FiX } from 'react-icons/fi';
 import { useWishlistIds } from '@/features/wishlist/wishlistStorage';
 import { getCategories } from '@/lib/apis/categoriesApi';
 import { getSubCategories } from '@/lib/apis/subCategoriesApi';
@@ -33,6 +33,21 @@ function getCategoryImage(category: Category) {
   return getApiAssetUrl(category.imageUrl) || '/products/Dumm/iamge1.png';
 }
 
+function getSortableOrder(order: number | string | null | undefined) {
+  const numericOrder = Number(order);
+  return Number.isFinite(numericOrder) ? numericOrder : Number.MAX_SAFE_INTEGER;
+}
+
+function sortByOrder<T extends { order?: number | string | null }>(items: T[]) {
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((first, second) => {
+      const orderDifference = getSortableOrder(first.item.order) - getSortableOrder(second.item.order);
+      return orderDifference || first.index - second.index;
+    })
+    .map(({ item }) => item);
+}
+
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(false);
@@ -46,15 +61,17 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const wishlist = useWishlistIds();
+  const orderedCategories = useMemo(() => sortByOrder(categories), [categories]);
+  const orderedSubCategories = useMemo(() => sortByOrder(subCategories), [subCategories]);
 
   const activeCategory = useMemo(() => {
-    return categories.find((category) => category.id === activeCategoryId) ?? categories[0] ?? null;
-  }, [activeCategoryId, categories]);
+    return orderedCategories.find((category) => category.id === activeCategoryId) ?? orderedCategories[0] ?? null;
+  }, [activeCategoryId, orderedCategories]);
 
   const visibleSubCategories = useMemo(() => {
     if (!activeCategory) return [];
-    return subCategories.filter((subCategory) => subCategory.categoryId === activeCategory.id);
-  }, [activeCategory, subCategories]);
+    return orderedSubCategories.filter((subCategory) => subCategory.categoryId === activeCategory.id);
+  }, [activeCategory, orderedSubCategories]);
 
   const activeSubCategory = useMemo(() => {
     return visibleSubCategories.find((subCategory) => subCategory.id === activeSubCategoryId) ?? visibleSubCategories[0] ?? null;
@@ -80,9 +97,11 @@ export default function Header() {
         getSubCategories(null, { pageNumber: 1, pageSize: 200, search: '' }),
       ]);
 
+      const nextCategories = sortByOrder(categoriesResponse.data);
+
       setCategories(categoriesResponse.data);
       setSubCategories(subCategoriesResponse.data);
-      setActiveCategoryId(categoriesResponse.data[0]?.id ?? null);
+      setActiveCategoryId(nextCategories[0]?.id ?? null);
     } catch {
       setMenuError('Could not load product categories.');
     } finally {
@@ -90,12 +109,13 @@ export default function Header() {
     }
   };
 
-  const toggleProductsMenu = () => {
-    const nextIsOpen = !isProductsMenuOpen;
-    setIsProductsMenuOpen(nextIsOpen);
-    if (nextIsOpen) {
-      void ensureProductMenuData();
-    }
+  const openProductsMenu = () => {
+    setIsProductsMenuOpen(true);
+    void ensureProductMenuData();
+  };
+
+  const closeProductsMenu = () => {
+    setIsProductsMenuOpen(false);
   };
 
   const toggleMobileProductsMenu = () => {
@@ -149,19 +169,144 @@ export default function Header() {
 
             if (link.href === '/products') {
               return (
-                <button
+                <div
                   key={link.href}
-                  type="button"
-                  onClick={toggleProductsMenu}
-                  aria-expanded={isProductsMenuOpen}
-                  className={`relative whitespace-nowrap px-1 py-2 transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:rounded-full after:bg-[#0037AD] after:transition-all ${
-                    isActive || isProductsMenuOpen
-                      ? 'font-bold text-[#0037AD] after:w-full'
-                      : 'text-gray-700 after:w-0 hover:text-[#04328E] hover:after:w-full'
-                  }`}
+                  className="relative"
+                  onMouseEnter={openProductsMenu}
+                  onMouseLeave={closeProductsMenu}
                 >
-                  {link.label}
-                </button>
+                  <button
+                    type="button"
+                    onFocus={openProductsMenu}
+                    onClick={openProductsMenu}
+                    aria-expanded={isProductsMenuOpen}
+                    className={`relative inline-flex items-center gap-1.5 whitespace-nowrap px-1 py-2 transition-colors after:absolute after:bottom-0 after:left-0 after:h-0.5 after:rounded-full after:bg-[#0037AD] after:transition-all ${
+                      isActive || isProductsMenuOpen
+                        ? 'font-bold text-[#0037AD] after:w-full'
+                        : 'text-gray-700 after:w-0 hover:text-[#04328E] hover:after:w-full'
+                    }`}
+                  >
+                    <span>{link.label}</span>
+                    <FiChevronDown className={`h-3.5 w-3.5 transition-transform ${isProductsMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isProductsMenuOpen && (
+                    <div className="absolute left-0 top-full z-50 hidden pt-5 lg:block">
+                      <div className="relative w-[min(675px,calc(100vw-2rem))] overflow-visible rounded-b-md border border-[#E3E7EF] bg-white shadow-[0_24px_70px_rgba(0,17,58,0.16)]">
+                        <div className="absolute -top-2 left-7 h-4 w-4 rotate-45 border-l border-t border-[#E3E7EF] bg-white" aria-hidden="true" />
+                        {isMenuLoading ? (
+                          <div className="grid h-[360px] grid-cols-3 gap-px overflow-hidden rounded-b-md bg-[#E3E7EF]">
+                            {[0, 1, 2].map((column) => (
+                              <div key={column} className="bg-white p-4">
+                                {[0, 1, 2, 3, 4].map((item) => (
+                                  <div key={item} className="mb-4 h-10 animate-pulse rounded bg-[#F2F6FF]" />
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        ) : menuError ? (
+                          <div className="overflow-hidden rounded-b-md p-8 text-center text-sm font-bold text-red-600">
+                            {menuError}
+                          </div>
+                        ) : (
+                          <div className="grid min-h-[360px] grid-cols-[1.05fr_0.95fr_1fr] overflow-hidden rounded-b-md">
+                            <div className="p-1">
+                              {orderedCategories.map((category) => {
+                                const isActiveCategory = activeCategory?.id === category.id;
+
+                                return (
+                                  <button
+                                    key={category.id}
+                                    type="button"
+                                    onMouseEnter={() => {
+                                      setActiveCategoryId(category.id);
+                                      setActiveSubCategoryId(null);
+                                    }}
+                                    onFocus={() => {
+                                      setActiveCategoryId(category.id);
+                                      setActiveSubCategoryId(null);
+                                    }}
+                                    onClick={() => navigateToCategory(category)}
+                                    className={`flex h-[61px] w-full items-center gap-3 rounded-md px-2 text-left transition-colors ${
+                                      isActiveCategory ? 'bg-[#EEF3FF]' : 'hover:bg-[#F7FAFF]'
+                                    }`}
+                                  >
+                                    <span className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-[#F3F7FF]">
+                                      <Image
+                                        src={getCategoryImage(category)}
+                                        alt={category.name}
+                                        fill
+                                        sizes="56px"
+                                        className="object-contain p-1"
+                                      />
+                                    </span>
+                                    <span className="min-w-0 flex-1 break-words text-lg font-medium text-[#4A4A4A] [overflow-wrap:anywhere]">
+                                      {category.name}
+                                    </span>
+                                    <FiChevronRight className="h-5 w-5 flex-shrink-0 text-[#0037AD]" />
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            <div className="border-l border-[#E3E7EF]">
+                              {visibleSubCategories.length ? (
+                                visibleSubCategories.map((subCategory) => {
+                                  const isActiveSubCategory = activeSubCategory?.id === subCategory.id;
+
+                                  return (
+                                    <button
+                                      key={subCategory.id}
+                                      type="button"
+                                      onMouseEnter={() => setActiveSubCategoryId(subCategory.id)}
+                                      onFocus={() => setActiveSubCategoryId(subCategory.id)}
+                                      onClick={() => navigateToSubCategory(subCategory)}
+                                      className={`flex h-[52px] w-full items-center justify-between gap-3 px-5 text-left text-lg font-medium transition-colors ${
+                                        isActiveSubCategory
+                                          ? 'text-[#0037AD]'
+                                          : 'text-[#4A4A4A] hover:bg-[#F7FAFF] hover:text-[#0037AD]'
+                                      }`}
+                                    >
+                                      <span className="min-w-0 break-words [overflow-wrap:anywhere]">{subCategory.name}</span>
+                                      <FiChevronRight className="h-5 w-5 flex-shrink-0 text-[#0037AD]" />
+                                    </button>
+                                  );
+                                })
+                              ) : (
+                                <div className="px-5 py-8 text-sm font-semibold text-[#6B7280]">No subcategories yet.</div>
+                              )}
+                            </div>
+
+                            <div className="border-l border-[#E3E7EF]">
+                              {activeSubCategory ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => navigateToSubCategory(activeSubCategory)}
+                                    className="flex h-[52px] w-full items-center px-5 text-left text-lg font-medium text-[#4A4A4A] transition-colors hover:bg-[#F7FAFF] hover:text-[#0037AD]"
+                                  >
+                                    <span className="min-w-0 break-words [overflow-wrap:anywhere]">{activeSubCategory.name}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => activeCategory && navigateToCategory(activeCategory)}
+                                    className="flex h-[52px] w-full items-center border-t border-[#E3E7EF] px-5 text-left text-lg font-medium text-[#4A4A4A] transition-colors hover:bg-[#F7FAFF] hover:text-[#0037AD]"
+                                  >
+                                    All {activeCategory?.name}
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="px-5 py-8 text-sm font-semibold text-[#6B7280]">
+                                  Select a subcategory to continue.
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             }
 
@@ -222,116 +367,6 @@ export default function Header() {
         </div>
       </div>
 
-      {isProductsMenuOpen && (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[-1] hidden cursor-default lg:block"
-            aria-label="Close products menu"
-            onClick={() => setIsProductsMenuOpen(false)}
-          />
-          <div className="absolute left-1/2 top-full z-50 hidden w-[min(675px,calc(100vw-2rem))] -translate-x-1/2 overflow-hidden rounded-b-md border border-[#E3E7EF] bg-white shadow-[0_24px_70px_rgba(0,17,58,0.16)] lg:block">
-            {isMenuLoading ? (
-              <div className="grid h-[360px] grid-cols-3 gap-px bg-[#E3E7EF]">
-                {[0, 1, 2].map((column) => (
-                  <div key={column} className="bg-white p-4">
-                    {[0, 1, 2, 3, 4].map((item) => (
-                      <div key={item} className="mb-4 h-10 animate-pulse rounded bg-[#F2F6FF]" />
-                    ))}
-                  </div>
-                ))}
-              </div>
-            ) : menuError ? (
-              <div className="p-8 text-center text-sm font-bold text-red-600">{menuError}</div>
-            ) : (
-              <div className="grid min-h-[360px] grid-cols-[1.05fr_0.95fr_1fr]">
-                <div className="p-1">
-                  {categories.map((category) => {
-                    const isActive = activeCategory?.id === category.id;
-
-                    return (
-                      <button
-                        key={category.id}
-                        type="button"
-                        onClick={() => handleCategoryClick(category)}
-                        className={`flex h-[61px] w-full items-center gap-3 rounded-md px-2 text-left transition-colors ${
-                          isActive ? 'bg-[#EEF3FF]' : 'hover:bg-[#F7FAFF]'
-                        }`}
-                      >
-                        <span className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-md bg-[#F3F7FF]">
-                          <Image
-                            src={getCategoryImage(category)}
-                            alt={category.name}
-                            fill
-                            sizes="56px"
-                            className="object-contain p-1"
-                          />
-                        </span>
-                        <span className="min-w-0 flex-1 break-words text-lg font-medium text-[#4A4A4A] [overflow-wrap:anywhere]">
-                          {category.name}
-                        </span>
-                        <span className="text-2xl font-bold leading-none text-[#0037AD]">→</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="border-l border-[#E3E7EF]">
-                  {visibleSubCategories.length ? (
-                    visibleSubCategories.map((subCategory) => {
-                      const isActive = activeSubCategory?.id === subCategory.id;
-
-                      return (
-                        <button
-                          key={subCategory.id}
-                          type="button"
-                          onMouseEnter={() => setActiveSubCategoryId(subCategory.id)}
-                          onFocus={() => setActiveSubCategoryId(subCategory.id)}
-                          onClick={() => navigateToSubCategory(subCategory)}
-                          className={`flex h-[52px] w-full items-center justify-between gap-3 px-5 text-left text-lg font-medium transition-colors ${
-                            isActive ? 'text-[#0037AD]' : 'text-[#4A4A4A] hover:bg-[#F7FAFF] hover:text-[#0037AD]'
-                          }`}
-                        >
-                          <span className="min-w-0 break-words [overflow-wrap:anywhere]">{subCategory.name}</span>
-                          <span className="text-2xl font-bold leading-none text-[#0037AD]">→</span>
-                        </button>
-                      );
-                    })
-                  ) : (
-                    <div className="px-5 py-8 text-sm font-semibold text-[#6B7280]">No subcategories yet.</div>
-                  )}
-                </div>
-
-                <div className="border-l border-[#E3E7EF]">
-                  {activeSubCategory ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => navigateToSubCategory(activeSubCategory)}
-                        className="flex h-[52px] w-full items-center px-5 text-left text-lg font-medium text-[#4A4A4A] transition-colors hover:bg-[#F7FAFF] hover:text-[#0037AD]"
-                      >
-                        <span className="min-w-0 break-words [overflow-wrap:anywhere]">{activeSubCategory.name}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => activeCategory && navigateToCategory(activeCategory)}
-                        className="flex h-[52px] w-full items-center border-t border-[#E3E7EF] px-5 text-left text-lg font-medium text-[#4A4A4A] transition-colors hover:bg-[#F7FAFF] hover:text-[#0037AD]"
-                      >
-                        All {activeCategory?.name}
-                      </button>
-                    </>
-                  ) : (
-                    <div className="px-5 py-8 text-sm font-semibold text-[#6B7280]">
-                      Select a subcategory to continue.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-lg py-4 px-4 flex flex-col space-y-4">
@@ -370,7 +405,7 @@ export default function Header() {
                       {menuError && <p className="text-sm font-bold text-red-600">{menuError}</p>}
                       {!isMenuLoading &&
                         !menuError &&
-                        categories.map((category) => (
+                        orderedCategories.map((category) => (
                           <div key={category.id} className="rounded-lg bg-white">
                             <button
                               type="button"
@@ -389,7 +424,7 @@ export default function Header() {
                               <span className="min-w-0 flex-1 break-words font-semibold text-[#454444] [overflow-wrap:anywhere]">
                                 {category.name}
                               </span>
-                              <span className="text-xl font-bold text-[#0037AD]">→</span>
+                              <FiChevronRight className="h-5 w-5 flex-shrink-0 text-[#0037AD]" />
                             </button>
                             {activeCategory?.id === category.id && (
                               <div className="space-y-1 border-t border-[#E3E7EF] px-3 py-2">

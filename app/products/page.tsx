@@ -18,6 +18,21 @@ import { SubCategory } from "@/lib/models/subCategory";
 const productPageSize = 9;
 const wetSuitTypeOptions: ProductType[] = ["Shorty", "Full"];
 
+function getSortableOrder(order: number | string | null | undefined) {
+  const numericOrder = Number(order);
+  return Number.isFinite(numericOrder) ? numericOrder : Number.MAX_SAFE_INTEGER;
+}
+
+function sortByOrder<T extends { order?: number | string | null }>(items: T[]) {
+  return items
+    .map((item, index) => ({ item, index }))
+    .sort((first, second) => {
+      const orderDifference = getSortableOrder(first.item.order) - getSortableOrder(second.item.order);
+      return orderDifference || first.index - second.index;
+    })
+    .map(({ item }) => item);
+}
+
 function toNumberParam(value: string | null) {
   const numericValue = Number(value);
   return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
@@ -95,7 +110,9 @@ function ProductsPageContent() {
   const queryCategoryId = toNumberParam(searchParams.get("categoryId"));
   const querySubCategoryId = toNumberParam(searchParams.get("subCategoryId"));
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(queryCategoryId);
-  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<number | null>(querySubCategoryId);
+  const [selectedSubCategoryIds, setSelectedSubCategoryIds] = useState<number[]>(
+    querySubCategoryId ? [querySubCategoryId] : []
+  );
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("newest");
@@ -105,42 +122,57 @@ function ProductsPageContent() {
 
   const categoriesQuery = usePublicCategories({ pageNumber: 1, pageSize: 100, search: "" });
   const subCategoriesQuery = usePublicSubCategories({ pageNumber: 1, pageSize: 200, search: "" });
-  const categories = useMemo(() => categoriesQuery.data?.categories ?? [], [categoriesQuery.data?.categories]);
+  const categories = useMemo(
+    () => sortByOrder(categoriesQuery.data?.categories ?? []),
+    [categoriesQuery.data?.categories]
+  );
   const subCategories = useMemo(
-    () => subCategoriesQuery.data?.subCategories ?? [],
+    () => sortByOrder(subCategoriesQuery.data?.subCategories ?? []),
     [subCategoriesQuery.data?.subCategories]
   );
 
-  const selectedSubCategory = subCategories.find((subCategory) => subCategory.id === selectedSubCategoryId) ?? null;
+  const selectedSubCategories = subCategories.filter((subCategory) => selectedSubCategoryIds.includes(subCategory.id));
+  const selectedSubCategory = selectedSubCategories[0] ?? null;
   const effectiveCategoryId = selectedCategoryId ?? selectedSubCategory?.categoryId ?? null;
   const selectedCategory = categories.find((category) => category.id === effectiveCategoryId) ?? null;
   const isWetSuitsCategorySelected = Boolean(
     (selectedCategory && isWetSuitsCategoryName(selectedCategory.name)) ||
-      (selectedSubCategory && isWetSuitsCategoryName(selectedSubCategory.name))
+      selectedSubCategories.some((subCategory) => isWetSuitsCategoryName(subCategory.name))
   );
   const canUseWetSuitTypeFilter = isWetSuitsCategorySelected;
   const effectiveProductType = canUseWetSuitTypeFilter ? selectedProductType : null;
   const activeSubCategories = getSubCategoriesForCategory(subCategories, effectiveCategoryId);
-  const currentBaseFilterLabel = selectedSubCategory?.name || selectedCategory?.name || "All products";
+  const currentBaseFilterLabel = selectedSubCategories.length
+    ? selectedSubCategories.map((subCategory) => subCategory.name).join(", ")
+    : selectedCategory?.name || "All products";
   const currentFilterLabel = effectiveProductType ? `${currentBaseFilterLabel} / ${effectiveProductType}` : currentBaseFilterLabel;
+  const shouldFilterMultipleSubCategories = selectedSubCategoryIds.length > 1;
   const productsQuery = usePublicProducts({
-    pageNumber,
-    pageSize: productPageSize,
+    pageNumber: shouldFilterMultipleSubCategories ? 1 : pageNumber,
+    pageSize: shouldFilterMultipleSubCategories ? 500 : productPageSize,
     categoryId: selectedCategoryId,
-    subCategoryId: selectedSubCategoryId,
+    subCategoryId: selectedSubCategoryIds.length === 1 ? selectedSubCategoryIds[0] : null,
     type: effectiveProductType,
     search,
   });
-  const products = productsQuery.data?.products ?? [];
+  const queriedProducts = productsQuery.data?.products ?? [];
+  const products = shouldFilterMultipleSubCategories
+    ? queriedProducts.filter((product) => selectedSubCategoryIds.includes(product.subCategoryId))
+    : queriedProducts;
   const pagination = productsQuery.data?.pagination;
-  const totalCount = Number(pagination?.totalCount ?? products.length);
-  const totalPages = Math.max(1, Math.ceil(totalCount / productPageSize));
+  const totalCount = shouldFilterMultipleSubCategories ? products.length : Number(pagination?.totalCount ?? products.length);
+  const totalPages = shouldFilterMultipleSubCategories ? 1 : Math.max(1, Math.ceil(totalCount / productPageSize));
   const allCategoryCount = categories.reduce((sum, category) => sum + Number(category.productCount || 0), 0);
-  const activeFilterCount = [effectiveCategoryId, selectedSubCategoryId, effectiveProductType, search].filter(Boolean).length;
+  const activeFilterCount = [
+    effectiveCategoryId,
+    ...selectedSubCategoryIds,
+    effectiveProductType,
+    search,
+  ].filter(Boolean).length;
 
   const handleCategoryClick = (category: Category) => {
     setSelectedCategoryId(category.id);
-    setSelectedSubCategoryId(null);
+    setSelectedSubCategoryIds([]);
     if (!isWetSuitsCategoryName(category.name)) {
       setSelectedProductType(null);
     }
@@ -149,14 +181,18 @@ function ProductsPageContent() {
 
   const handleAllCategoriesClick = () => {
     setSelectedCategoryId(null);
-    setSelectedSubCategoryId(null);
+    setSelectedSubCategoryIds([]);
     setSelectedProductType(null);
     setPageNumber(1);
   };
 
   const handleSubCategoryClick = (subCategory: SubCategory) => {
     setSelectedCategoryId(subCategory.categoryId);
-    setSelectedSubCategoryId((current) => (current === subCategory.id ? null : subCategory.id));
+    setSelectedSubCategoryIds((current) =>
+      current.includes(subCategory.id)
+        ? current.filter((subCategoryId) => subCategoryId !== subCategory.id)
+        : [...current, subCategory.id]
+    );
     const parentCategory = categories.find((category) => category.id === subCategory.categoryId);
     if (!isWetSuitsCategoryName(subCategory.name) && parentCategory && !isWetSuitsCategoryName(parentCategory.name)) {
       setSelectedProductType(null);
@@ -177,7 +213,7 @@ function ProductsPageContent() {
 
   const clearFilters = () => {
     setSelectedCategoryId(null);
-    setSelectedSubCategoryId(null);
+    setSelectedSubCategoryIds([]);
     setSelectedProductType(null);
     setSearchInput("");
     setSearch("");
@@ -296,7 +332,7 @@ function ProductsPageContent() {
                   ) : (
                     <div className="space-y-3">
                       {activeSubCategories.map((subCategory) => {
-                        const isActive = selectedSubCategoryId === subCategory.id;
+                        const isActive = selectedSubCategoryIds.includes(subCategory.id);
 
                         return (
                           <label key={subCategory.id} className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-[#5E6675] transition-colors hover:text-[#0037AD]">
@@ -413,7 +449,7 @@ function ProductsPageContent() {
                     ) : (
                       <div className="space-y-3">
                         {activeSubCategories.map((subCategory) => {
-                          const isActive = selectedSubCategoryId === subCategory.id;
+                          const isActive = selectedSubCategoryIds.includes(subCategory.id);
 
                           return (
                             <label key={subCategory.id} className="flex cursor-pointer items-center gap-3 text-sm font-semibold text-[#5E6675]">
@@ -466,38 +502,6 @@ function ProductsPageContent() {
                   <option value="newest">Newest</option>
                 </select>
               </label>
-            </div>
-
-            <div className="-mx-4 mb-6 flex snap-x gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:flex-wrap md:overflow-visible md:px-0">
-              <button
-                type="button"
-                onClick={handleAllCategoriesClick}
-                className={`h-10 min-w-24 rounded-full border px-6 text-sm font-bold transition-colors ${
-                  !effectiveCategoryId
-                    ? "border-[#0037AD] bg-[#0037AD] text-white"
-                    : "border-[#0037AD] bg-white text-[#0037AD] hover:bg-[#EEF4FF]"
-                }`}
-              >
-                All
-              </button>
-              {categories.map((category) => {
-                const isActive = effectiveCategoryId === category.id;
-
-                return (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => handleCategoryClick(category)}
-                    className={`h-10 min-w-24 rounded-full border px-6 text-sm font-bold transition-colors ${
-                      isActive
-                        ? "border-[#0037AD] bg-[#0037AD] text-white"
-                        : "border-[#0037AD] bg-white text-[#0037AD] hover:bg-[#EEF4FF]"
-                    }`}
-                  >
-                    <span className="block truncate">{category.name}</span>
-                  </button>
-                );
-              })}
             </div>
 
             <div className="mb-6 flex items-center justify-between gap-4">

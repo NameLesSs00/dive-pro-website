@@ -20,6 +20,7 @@ const pageSize = 10;
 
 const initialForm = {
   name: '',
+  order: '0',
   image: null as File | null,
 };
 
@@ -67,7 +68,7 @@ export default function AdminCategoriesPage() {
   const openEditModal = (category: Category) => {
     setModalMode('edit');
     setSelectedCategory(category);
-    setForm({ name: category.name, image: null });
+    setForm({ name: category.name, order: String(category.order ?? 0), image: null });
     setStatusMessage('');
     setLocalImagePreview('');
     createMutation.reset();
@@ -104,12 +105,16 @@ export default function AdminCategoriesPage() {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    const order = Number(form.order);
+    if (!Number.isFinite(order)) return;
+
     if (modalMode === 'create') {
       if (!form.image) return;
 
       createMutation.mutate(
         {
           name: form.name,
+          order: String(order),
           image: form.image,
         },
         {
@@ -133,6 +138,7 @@ export default function AdminCategoriesPage() {
         id: selectedCategory.id,
         payload: {
           name: form.name,
+          order: String(order),
           image: form.image,
         },
       },
@@ -232,11 +238,12 @@ export default function AdminCategoriesPage() {
         ) : categories.length ? (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] border-separate border-spacing-y-3 text-left">
+              <table className="w-full min-w-[900px] border-separate border-spacing-y-3 text-left">
                 <thead>
                   <tr className="text-sm text-[#5E6675]">
                     <th className="w-[260px] rounded-l-lg bg-[#F7FAFF] px-4 py-3 font-bold">Preview</th>
                     <th className="bg-[#F7FAFF] px-4 py-3 font-bold">Name</th>
+                    <th className="w-[120px] bg-[#F7FAFF] px-4 py-3 text-center font-bold">Order</th>
                     <th className="w-[140px] bg-[#F7FAFF] px-4 py-3 text-center font-bold">Products</th>
                     <th className="w-[160px] rounded-r-lg bg-[#F7FAFF] px-4 py-3 text-right font-bold">Actions</th>
                   </tr>
@@ -264,6 +271,11 @@ export default function AdminCategoriesPage() {
                           <p className="text-lg font-bold text-[#00113A]">{category.name}</p>
                           <p className="mt-1 text-sm text-[#5E6675]">Category ID: {category.id}</p>
                         </div>
+                      </td>
+                      <td className="border-y border-[#E5ECF8] bg-white px-4 py-3 text-center transition-colors group-hover:bg-[#FBFCFF]">
+                        <span className="inline-flex min-w-12 justify-center rounded-lg bg-[#F7FAFF] px-3 py-2 text-sm font-bold text-[#384152]">
+                          {category.order ?? 0}
+                        </span>
                       </td>
                       <td className="border-y border-[#E5ECF8] bg-white px-4 py-3 text-center transition-colors group-hover:bg-[#FBFCFF]">
                         <span className="inline-flex min-w-12 justify-center rounded-lg bg-[#EAF1FF] px-3 py-2 text-sm font-bold text-[#0037AD]">
@@ -386,6 +398,20 @@ export default function AdminCategoriesPage() {
                   required
                   className="h-12 w-full rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] px-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
                   placeholder="Category name"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-2 block text-sm font-bold text-[#00113A]">Order</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={form.order}
+                  onChange={(event) => setForm((current) => ({ ...current, order: event.target.value }))}
+                  required
+                  className="h-12 w-full rounded-lg border border-[#D9E4F5] bg-[#F7FAFF] px-4 text-[#00113A] outline-none focus:border-[#0037AD] focus:bg-white"
+                  placeholder="0"
                 />
               </label>
 

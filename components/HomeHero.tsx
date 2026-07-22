@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -8,69 +8,107 @@ import { FaArrowRight, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 const heroSlides = [
   {
-    src: '/Home/heroImage.jpg',
+    desktopSrc: '/Home/heroImage.jpg',
+    mobileSrc: '/Home/heroImage.jpg',
     alt: 'Diver underwater',
-    objectPosition: 'object-[62%_center] md:object-[72%_center]',
-    imageTransform: '',
+    desktopObjectPosition: 'object-[72%_center]',
+    mobileObjectPosition: 'object-[68%_center]',
+    desktopImageTransform: '',
+    mobileImageTransform: '',
   },
   {
-    src: '/Home/hero2.webp',
-    alt: 'Dive Pro diver exploring blue water',
-    objectPosition: 'object-[58%_28%] md:object-[58%_24%]',
-    imageTransform: 'scale-[1.28] translate-x-[14%] translate-y-[4%] md:scale-[1.36] md:translate-x-[18%] md:translate-y-[5%]',
+    desktopSrc: '/Home/heroDesktop1.png',
+    mobileSrc: '/Home/heroMobile1.png',
+    alt: 'Dive Pro diver sitting on a boat before a dive',
+    desktopObjectPosition: 'object-[64%_10%]',
+    mobileObjectPosition: 'object-[76%_center]',
+    desktopImageTransform: '',
+    mobileImageTransform: '',
   },
   {
-    src: '/Home/hero1.webp',
-    alt: 'Diving gear in open water',
-    objectPosition: 'object-[62%_18%] md:object-[62%_16%]',
-    imageTransform: 'scale-[1.28] translate-x-[14%] md:scale-[1.36] md:translate-x-[18%]',
+    desktopSrc: '/Home/heroDesktop2.png',
+    mobileSrc: '/Home/heroMobile2.png',
+    alt: 'Dive Pro diver carrying scuba gear by the sea',
+    desktopObjectPosition: 'object-[72%_14%]',
+    mobileObjectPosition: 'object-[78%_center]',
+    desktopImageTransform: 'md:origin-top md:scale-[1.26] md:translate-x-[-12%]',
+    mobileImageTransform: '',
   },
 ];
 
+const HERO_SLIDE_DURATION_MS = 8500;
+
 export default function HomeHero() {
   const [activeSlide, setActiveSlide] = useState(0);
+  const sliderTimerRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    const sliderTimer = window.setInterval(() => {
-      setActiveSlide((current) => (current + 1) % heroSlides.length);
-    }, 5200);
-
-    return () => window.clearInterval(sliderTimer);
+  const clearSlideTimer = useCallback(() => {
+    if (sliderTimerRef.current !== null) {
+      window.clearTimeout(sliderTimerRef.current);
+      sliderTimerRef.current = null;
+    }
   }, []);
 
+  const scheduleNextSlide = useCallback(() => {
+    clearSlideTimer();
+    sliderTimerRef.current = window.setTimeout(() => {
+      setActiveSlide((current) => (current + 1) % heroSlides.length);
+    }, HERO_SLIDE_DURATION_MS);
+  }, [clearSlideTimer]);
+
+  useEffect(() => {
+    scheduleNextSlide();
+
+    return clearSlideTimer;
+  }, [activeSlide, clearSlideTimer, scheduleNextSlide]);
+
+  const updateSlide = (nextSlide: number | ((current: number) => number)) => {
+    clearSlideTimer();
+    setActiveSlide(nextSlide);
+    scheduleNextSlide();
+  };
+
   const goToPreviousSlide = () => {
-    setActiveSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length);
+    updateSlide((current) => (current - 1 + heroSlides.length) % heroSlides.length);
   };
 
   const goToNextSlide = () => {
-    setActiveSlide((current) => (current + 1) % heroSlides.length);
+    updateSlide((current) => (current + 1) % heroSlides.length);
   };
 
   return (
-    <section className="relative flex min-h-[500px] w-full items-center overflow-hidden bg-[#00113A] md:min-h-[620px]">
+    <section className="relative flex min-h-[570px] w-full items-center overflow-hidden bg-[#00113A] sm:min-h-[610px] md:min-h-[620px]">
       <AnimatePresence mode="wait">
         <motion.div
-          key={heroSlides[activeSlide].src}
+          key={`${heroSlides[activeSlide].desktopSrc}-${activeSlide}`}
           className="absolute inset-0"
           initial={{ opacity: 0, scale: 1.06 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.02 }}
-          transition={{ duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           <Image
-            src={heroSlides[activeSlide].src}
+            src={heroSlides[activeSlide].mobileSrc}
             alt={heroSlides[activeSlide].alt}
             fill
-            sizes="100vw"
+            sizes="(max-width: 767px) 100vw, 0vw"
             priority={activeSlide === 0}
-            className={`object-cover ${heroSlides[activeSlide].objectPosition} ${heroSlides[activeSlide].imageTransform}`}
+            className={`object-cover md:hidden ${heroSlides[activeSlide].mobileObjectPosition} ${heroSlides[activeSlide].mobileImageTransform}`}
+          />
+          <Image
+            src={heroSlides[activeSlide].desktopSrc}
+            alt={heroSlides[activeSlide].alt}
+            fill
+            sizes="(min-width: 768px) 100vw, 0vw"
+            priority={activeSlide === 0}
+            className={`hidden object-cover md:block ${heroSlides[activeSlide].desktopObjectPosition} ${heroSlides[activeSlide].desktopImageTransform}`}
           />
         </motion.div>
       </AnimatePresence>
-      <div className="absolute inset-0 bg-gradient-to-r from-[#00113A]/86 via-[#00113A]/50 to-[#00113A]/8 md:from-[#00113A]/94 md:via-[#00113A]/68 md:to-[#00113A]/18" />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#00113A]/24 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#00113A]/92 via-[#00113A]/58 to-[#00113A]/8 md:from-[#00113A]/94 md:via-[#00113A]/68 md:to-[#00113A]/18" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#00113A]/48 via-transparent to-transparent md:from-[#00113A]/24" />
 
-      <div className="container relative z-10 mx-auto px-4 pb-16 pt-14 text-white md:pb-28">
+      <div className="container relative z-10 mx-auto px-4 pb-24 pt-14 text-white sm:pt-16 md:pb-28">
         <motion.div
           className="max-w-3xl"
           initial={{ opacity: 0, y: 24 }}
@@ -135,9 +173,9 @@ export default function HomeHero() {
             <div className="flex items-center gap-2">
               {heroSlides.map((slide, index) => (
                 <button
-                  key={slide.src}
+                  key={`${slide.mobileSrc}-${index}`}
                   type="button"
-                  onClick={() => setActiveSlide(index)}
+                  onClick={() => updateSlide(index)}
                   aria-label={`Show hero image ${index + 1}`}
                   aria-current={activeSlide === index}
                   className={`h-2.5 rounded-full transition-all ${
@@ -158,12 +196,12 @@ export default function HomeHero() {
         </motion.div>
       </div>
 
-      <div className="pointer-events-none absolute bottom-[-6px] left-0 right-0 z-10 h-24 md:h-36" aria-hidden="true">
+      <div className="pointer-events-none absolute bottom-[-6px] left-[-24px] right-[-24px] z-10 h-28 sm:h-32 md:h-40" aria-hidden="true">
         <Image
-          src="/Group 1.png"
+          src="/Group 22.png"
           alt=""
           fill
-          sizes="100vw"
+          sizes="calc(100vw + 48px)"
           className="object-fill"
         />
         <div className="absolute inset-x-0 bottom-[-8px] h-5 bg-[#F8FAFF]" />
