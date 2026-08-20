@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'divepro.runasp.net',
+        hostname: 'divebro.premiumasp.net',
       },
     ],
   },
