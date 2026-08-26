@@ -502,24 +502,48 @@ export default function AdminProductsPage() {
     const colorsForSubmit = areColorsTouched ? form.colors : displayedColors;
     if (!payload.categoryId || !payload.subCategoryId || !payload.materialId) return;
 
-    try {
-      if (selectedProduct) {
-        const updatedProduct = await updateMutation.mutateAsync({ id: selectedProduct.id, payload });
-        if (areColorsTouched) {
-          await syncProductColors(updatedProduct.id, colorsForSubmit, productColorsQuery.data ?? selectedProduct.colors ?? []);
-        }
-        setStatusMessage('Product updated successfully.');
-        closeModal();
+    if (selectedProduct) {
+      // UPDATE PATH — keep product errors and color errors in separate states
+      let updatedProduct: Product;
+      try {
+        updatedProduct = await updateMutation.mutateAsync({ id: selectedProduct.id, payload });
+      } catch {
+        // updateMutation.error is already set; ApiErrorMessage renders it via showModalError
         return;
       }
 
-      const createdProduct = await createMutation.mutateAsync(payload);
-      await syncProductColors(createdProduct.id, colorsForSubmit);
-      setStatusMessage('Product created successfully.');
+      if (areColorsTouched) {
+        try {
+          await syncProductColors(updatedProduct.id, colorsForSubmit, productColorsQuery.data ?? selectedProduct.colors ?? []);
+        } catch (error) {
+          setColorError(error);
+          return;
+        }
+      }
+
+      setStatusMessage('Product updated successfully.');
       closeModal();
+      return;
+    }
+
+    // CREATE PATH — keep product errors and color errors in separate states
+    let createdProduct: Product;
+    try {
+      createdProduct = await createMutation.mutateAsync(payload);
+    } catch {
+      // createMutation.error is already set; ApiErrorMessage renders it via showModalError
+      return;
+    }
+
+    try {
+      await syncProductColors(createdProduct.id, colorsForSubmit);
     } catch (error) {
       setColorError(error);
+      return;
     }
+
+    setStatusMessage('Product created successfully.');
+    closeModal();
   };
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
